@@ -1,0 +1,16 @@
+<header class="bg-blue-600 text-white p-4">
+    <nav class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-xl font-bold">Social Network</a>
+      <div>
+        <% if (user) { %>
+          <a href="/home" class="mx-2">Home</a>
+          <a href="/users/profile" class="mx-2">Profile</a>
+          <a href="/chat" class="mx-2">Chat</a>
+          <a href="/auth/logout" class="mx-2">Logout</a>
+        <% } else { %>
+          <a href="/auth/login" class="mx-2">Login</a>
+          <a href="/auth/register" class="mx-2">Register</a>
+        <% } %>
+      </div>
+    </nav>
+  </header>

@@ -1,0 +1,15 @@
+# Bỏ qua thư mục node_modules
+node_modules/
+
+# Bỏ qua file .env chứa thông tin nhạy cảm
+.env
+.env.example
+
+# Bỏ qua thư mục upload chứa file user upload (nếu có)
+public/uploads/
+
+# Bỏ qua các file log
+*.log
+
+# Bỏ qua thư mục dist (khi dùng bundler như Webpack hoặc Babel)
+dist/
