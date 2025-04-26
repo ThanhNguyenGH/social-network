@@ -1,17 +1,21 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const { RedisStore } = require('connect-redis');
+const redisClient = require('./config/redis'); 
 const passport = require('passport');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const csurf = require('csurf');
 const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
-require('dotenv').config();
 require('./config/passport');
+
+// Log REDIS_URL để debug (che password)
+console.log('REDIS_URL in server.js:', process.env.REDIS_URL ? process.env.REDIS_URL.replace(/:[^@]+@/, ':****@') : 'undefined');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,14 +38,40 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main'); // Chỉ định main.ejs làm layout mặc định
 
-// Session
-app.use(session({
+// Session với Redis
+const sessionMiddleware = session({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'sess:', // Đảm bảo prefix cho session
+    ttl: 86400 // 1 ngày (giây)
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
-}));
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+    httpOnly: true
+  }
+});
+
+app.use(sessionMiddleware);
+
+// Debug session và lưu vào Redis
+app.use(async (req, res, next) => {
+  console.log('Session data:', req.session);
+  if (req.session.user) {
+    try {
+      // Kiểm tra session trong Redis
+      const sessionId = req.sessionID;
+      const sessionData = await redisClient.get(`sess:${sessionId}`);
+      console.log(`Redis session [sess:${sessionId}]:`, sessionData ? 'Stored' : 'Not stored');
+    } catch (err) {
+      console.error('Error checking Redis session:', err);
+    }
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());

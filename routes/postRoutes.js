@@ -18,7 +18,13 @@ const router = express.Router();
 
 // Trang chủ hiển thị bài đăng
 router.get('/home', isAuthenticated, postController.getHome);
-
+/*
+// Trang chủ hiển thị bài đăng
+router.get('/home', isAuthenticated, (req, res, next) => {
+    console.log('Route /home called');
+    postController.getHome(req, res, next);
+  });
+*/
 // Tạo bài đăng
 router.post('/create', isAuthenticated, postController.createPost);
 
