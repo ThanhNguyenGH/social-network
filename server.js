@@ -14,9 +14,6 @@ const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 require('./config/passport');
 
-// Log REDIS_URL để debug (che password)
-console.log('REDIS_URL in server.js:', process.env.REDIS_URL ? process.env.REDIS_URL.replace(/:[^@]+@/, ':****@') : 'undefined');
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -42,36 +39,35 @@ app.set('layout', 'layouts/main'); // Chỉ định main.ejs làm layout mặc �
 const sessionMiddleware = session({
   store: new RedisStore({
     client: redisClient,
-    prefix: 'sess:', // Đảm bảo prefix cho session
-    ttl: 86400 // 1 ngày (giây)
+    prefix: 'sess:',
+    ttl: 86400 // 1 ngày
   }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000, // 1 ngày
+    maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true
   }
 });
 
 app.use(sessionMiddleware);
 
-// Debug session và lưu vào Redis
+// Log đơn giản session lưu vào Redis
 app.use(async (req, res, next) => {
-  console.log('Session data:', req.session);
-  if (req.session.user) {
+  if (req.session?.user) {
     try {
-      // Kiểm tra session trong Redis
       const sessionId = req.sessionID;
       const sessionData = await redisClient.get(`sess:${sessionId}`);
-      console.log(`Redis session [sess:${sessionId}]:`, sessionData ? 'Stored' : 'Not stored');
+      console.log(`[Redis session] sess:${sessionId} => ${sessionData ? 'Found' : 'Not found'}`);
     } catch (err) {
-      console.error('Error checking Redis session:', err);
+      console.error('[Redis session] Error:', err.message);
     }
   }
   next();
 });
+
 
 app.use(passport.initialize());
 app.use(passport.session());

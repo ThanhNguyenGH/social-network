@@ -1,0 +1,31 @@
+
+<div class="container mt-5">
+  
+  <h1>Your Friends</h1>
+  <div class="mb-3">
+    <a href="/users/search" class="btn btn-primary">Find Friends</a>
+    <a href="/users/profile/<%= currentUser._id %>" class="btn btn-secondary">Back to Profile</a>
+  </div>
+
+  <% if (friends.length > 0) { %>
+    <div class="row">
+      <% friends.forEach(friend => { %>
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <img src="<%= friend.avatar || '/images/default-avatar.png' %>" alt="Friend Avatar" class="card-img-top" width="100" height="100">
+            <div class="card-body">
+              <h5 class="card-title"><a href="/users/profile/<%= friend._id %>"><%= friend.username %></a></h5>
+              <form action="/users/friend/<%= friend._id %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-danger">Remove Friend</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p>You have no friends yet. Try searching for users to connect!</p>
+  <% } %>
+
+</div>

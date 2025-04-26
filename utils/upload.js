@@ -1,24 +1,24 @@
-const cloudinary = require('../config/cloudinary');
+// utils/upload.js
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const path = require('path');
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'social-network',
-    allowed_formats: ['jpg', 'png']
+const storage = multer.diskStorage({
+  destination: './uploads/',
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // giới hạn 100MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|mp3|mp4|wav|mov|webm/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) return cb(null, true);
+    cb(new Error('File type not allowed'));
+  }
+});
 
-const uploadImage = async (file) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream((error, result) => {
-      if (error) reject(error);
-      else resolve(result.secure_url);
-    }).end(file.buffer);
-  });
-};
-
-module.exports = { upload, uploadImage };
+module.exports = upload;

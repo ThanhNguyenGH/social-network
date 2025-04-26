@@ -7,9 +7,6 @@ if (!process.env.REDIS_URL) {
   process.exit(1);
 }
 
-// Log REDIS_URL (che password)
-console.log('Loading REDIS_URL:', process.env.REDIS_URL.replace(/:[^@]+@/, ':****@'));
-
 const redisClient = redis.createClient({
   url: process.env.REDIS_URL,
   retry_strategy: (options) => {
@@ -46,7 +43,6 @@ redisClient.on('ready', async () => {
 (async () => {
   try {
     await redisClient.connect();
-    console.log('Redis connection established with URL:', process.env.REDIS_URL.replace(/:[^@]+@/, ':****@'));
   } catch (err) {
     console.error('Failed to connect to Redis:', err);
     process.exit(1);

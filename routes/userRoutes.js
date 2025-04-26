@@ -1,10 +1,22 @@
 const express = require('express');
-const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
+const userController = require('../controllers/userController');
+const upload = require('../utils/upload');
 
-// Trang hồ sơ (placeholder)
-router.get('/profile', isAuthenticated, (req, res) => {
-  res.render('pages/profile', { user: req.session.user, csrfToken: req.csrfToken() });
-});
+// Xem profile
+router.get('/profile/:id', userController.getProfile);
+
+// Cập nhật profile
+router.get('/edit', userController.getEditProfile);
+router.post('/edit', upload.single('avatar'), userController.updateProfile);
+
+// Tìm kiếm người dùng
+router.get('/search', userController.searchUsers);
+
+// Xem danh sách bạn bè
+router.get('/friends', userController.getFriends);
+
+// Thêm/bỏ bạn bè
+router.post('/friend/:id', userController.toggleFriend);
 
 module.exports = router;
