@@ -26,3 +26,20 @@ Một ứng dụng mạng xã hội với chat thời gian thực, được xây
 
    ```bash
    git clone https://github.com/your-username/social-network.git
+
+2. Cài đặt các dependencies:
+   npm install
+
+3. Tạo file .env và cấu hình các biến môi trường   (tham khảo file .env.example).
+
+4. Khởi động server:
+   npm start
+
+## Deployment
+
+   Đã triển khai trên Render: https://your-social-app.onrender.com
+
+## License
+
+This project is licensed under the MIT License.  
+See the [LICENSE](LICENSE) file for more details.
