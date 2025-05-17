@@ -80,10 +80,23 @@ app.use(async (req, res, next) => {
 });
 
 // CSRF setup
+const csrfProtection = csurf({ cookie: false });
+
+// Khởi tạo CSRF token cho các route GET cần render form
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
-  res.locals.user = req.user || req.session.user;
-  next();
+  if (req.method === 'GET') {
+    // Tạo CSRF token cho GET requests
+    const csrfInstance = csurf({ cookie: false });
+    csrfInstance(req, res, () => {
+      res.locals.csrfToken = req.csrfToken();
+      res.locals.user = req.user || req.session.user;
+      next();
+    });
+  } else {
+    res.locals.csrfToken = '';
+    res.locals.user = req.user || req.session.user;
+    next();
+  }
 });
 
 // Log POST request sau khi parse
@@ -93,6 +106,7 @@ app.use((req, res, next) => {
       'content-type': req.headers['content-type'],
       'content-length': req.headers['content-length']
     });
+    console.log('POST Request Body:', req.body);
   }
   next();
 });
@@ -106,7 +120,7 @@ app.use((err, req, res, next) => {
     console.log('CSRF Token Expected:', req.csrfToken ? req.csrfToken() : 'Not available');
     console.log('CSRF Token Received:', req.body ? req.body._csrf : 'Not available');
     return res.status(403).render('pages/error', {
-      message: 'Invalid CSRF token',
+      message: 'Invalid CSRF token. Please refresh the page and try again.',
       user: req.session.user,
       layout: 'layouts/main'
     });
@@ -137,7 +151,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
 app.use(passport.initialize());
 app.use(passport.session());

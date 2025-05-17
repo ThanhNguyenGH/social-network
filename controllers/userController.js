@@ -136,8 +136,7 @@ exports.updateProfile = async (req, res, next) => {
           folder: 'social-network/avatars',
           width: 200,
           height: 200,
-          crop: 'fill',
-          format: 'jpg'
+          crop: 'fill'
         });
         console.log('updateProfile - Cloudinary result:', result);
         updateData.avatar = result.secure_url;
@@ -182,6 +181,15 @@ exports.updateProfile = async (req, res, next) => {
     console.error('updateProfile - Error:', err);
     if (req.file) {
       await fs.unlink(req.file.path).catch(err => console.error('updateProfile - Delete file error:', err));
+    }
+    if (err instanceof multer.MulterError) {
+      return res.status(400).render('pages/edit-profile', {
+        user: req.session.user,
+        errors: [{ msg: `Multer error: ${err.message}` }],
+        csrfToken: res.locals.csrfToken,
+        title: 'Edit Profile',
+        layout: 'layouts/main'
+      });
     }
     res.status(500).render('pages/edit-profile', {
       user: req.session.user,
