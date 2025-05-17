@@ -1,8 +1,8 @@
 module.exports = (err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).render('pages/error', {
-    error: 'Something went wrong!',
-    layout: 'layouts/main',
-    csrfToken: req.csrfToken()
+  console.error('Error Handler:', err);
+  res.status(err.status || 500).render('pages/error', {
+    message: err.message || 'An unexpected error occurred.',
+    user: req.session.user,
+    layout: 'layouts/main'
   });
 };

@@ -1,4 +1,3 @@
-// utils/upload.js
 const multer = require('multer');
 const path = require('path');
 
@@ -11,14 +10,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // giới hạn 100MB
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+    files: 1,
+    fields: 20,
+    parts: 20
+  },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|mp3|mp4|wav|mov|webm/;
+    const allowedTypes = /jpeg|jpg|png/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) return cb(null, true);
-    cb(new Error('File type not allowed'));
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Only JPEG and PNG images are allowed'));
   }
-});
+}).single('avatar');
 
 module.exports = upload;

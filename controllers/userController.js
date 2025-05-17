@@ -13,6 +13,7 @@ exports.getProfile = async (req, res, next) => {
       console.log('getProfile - Invalid userId');
       return res.status(400).render('pages/error', {
         message: `Invalid user ID: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -23,6 +24,7 @@ exports.getProfile = async (req, res, next) => {
       console.log('getProfile - User not found');
       return res.status(404).render('pages/error', {
         message: `User not found for ID: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -38,7 +40,11 @@ exports.getProfile = async (req, res, next) => {
     });
   } catch (err) {
     console.error('getProfile - Error:', err);
-    next(err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'An unexpected error occurred.',
+      user: req.session.user,
+      layout: 'layouts/main'
+    });
   }
 };
 
@@ -51,6 +57,8 @@ exports.getEditProfile = (req, res) => {
   }
   res.render('pages/edit-profile', {
     user: req.session.user,
+    errors: [],
+    csrfToken: res.locals.csrfToken,
     title: 'Edit Profile',
     layout: 'layouts/main'
   });
@@ -67,12 +75,54 @@ exports.updateProfile = async (req, res, next) => {
 
     const { username, email, bio } = req.body;
     const userId = req.session.user._id;
-    console.log('updateProfile - userId:', userId);
+    console.log('updateProfile - userId:', userId, 'body:', req.body);
+    console.log('updateProfile - file:', req.file);
 
     if (!mongoose.isValidObjectId(userId)) {
       console.log('updateProfile - Invalid userId');
       return res.status(400).render('pages/error', {
         message: `Invalid user ID in session: ${userId}`,
+        user: req.session.user,
+        layout: 'layouts/main'
+      });
+    }
+
+    // Validate input
+    const errors = [];
+    if (!username || username.length < 3) {
+      errors.push({ msg: 'Username must be at least 3 characters long' });
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push({ msg: 'Please enter a valid email' });
+    }
+    if (bio && bio.length > 500) {
+      errors.push({ msg: 'Bio cannot exceed 500 characters' });
+    }
+
+    // Kiểm tra username hoặc email đã tồn tại
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+      _id: { $ne: userId }
+    });
+    if (existingUser) {
+      if (existingUser.username === username) {
+        errors.push({ msg: 'Username is already taken' });
+      }
+      if (existingUser.email === email) {
+        errors.push({ msg: 'Email is already registered' });
+      }
+    }
+
+    if (errors.length > 0) {
+      console.log('updateProfile - Validation errors:', errors);
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(err => console.error('updateProfile - Delete file error:', err));
+      }
+      return res.status(400).render('pages/edit-profile', {
+        user: { ...req.session.user, username, email, bio },
+        errors,
+        csrfToken: res.locals.csrfToken,
+        title: 'Edit Profile',
         layout: 'layouts/main'
       });
     }
@@ -80,14 +130,33 @@ exports.updateProfile = async (req, res, next) => {
     const updateData = { username, email, bio };
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'social-network/avatars',
-        width: 200,
-        height: 200,
-        crop: 'fill'
-      });
-      updateData.avatar = result.secure_url;
-      await fs.unlink(req.file.path);
+      try {
+        console.log('updateProfile - Uploading to Cloudinary:', req.file.path);
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'social-network/avatars',
+          width: 200,
+          height: 200,
+          crop: 'fill',
+          format: 'jpg'
+        });
+        console.log('updateProfile - Cloudinary result:', result);
+        updateData.avatar = result.secure_url;
+        await fs.unlink(req.file.path).catch(err => {
+          console.error('updateProfile - Delete file error:', err);
+        });
+        console.log('updateProfile - Deleted local file:', req.file.path);
+      } catch (uploadErr) {
+        console.error('updateProfile - Cloudinary upload error:', uploadErr);
+        await fs.unlink(req.file.path).catch(err => console.error('updateProfile - Delete file error:', err));
+        errors.push({ msg: 'Failed to upload avatar. Please try again.' });
+        return res.status(500).render('pages/edit-profile', {
+          user: { ...req.session.user, username, email, bio },
+          errors,
+          csrfToken: res.locals.csrfToken,
+          title: 'Edit Profile',
+          layout: 'layouts/main'
+        });
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -101,6 +170,7 @@ exports.updateProfile = async (req, res, next) => {
       console.log('updateProfile - User not found');
       return res.status(404).render('pages/error', {
         message: `User not found for ID: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -110,7 +180,16 @@ exports.updateProfile = async (req, res, next) => {
     res.redirect(`/users/profile/${userId}`);
   } catch (err) {
     console.error('updateProfile - Error:', err);
-    next(err);
+    if (req.file) {
+      await fs.unlink(req.file.path).catch(err => console.error('updateProfile - Delete file error:', err));
+    }
+    res.status(500).render('pages/edit-profile', {
+      user: req.session.user,
+      errors: [{ msg: err.message || 'An unexpected error occurred.' }],
+      csrfToken: res.locals.csrfToken,
+      title: 'Edit Profile',
+      layout: 'layouts/main'
+    });
   }
 };
 
@@ -143,7 +222,11 @@ exports.searchUsers = async (req, res, next) => {
     });
   } catch (err) {
     console.error('searchUsers - Error:', err);
-    next(err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'An unexpected error occurred.',
+      user: req.session.user,
+      layout: 'layouts/main'
+    });
   }
 };
 
@@ -162,6 +245,7 @@ exports.getFriends = async (req, res, next) => {
       console.log('getFriends - Invalid userId');
       return res.status(400).render('pages/error', {
         message: `Invalid user ID in session: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -172,6 +256,7 @@ exports.getFriends = async (req, res, next) => {
       console.log('getFriends - User not found');
       return res.status(404).render('pages/error', {
         message: `User not found for ID: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -184,7 +269,11 @@ exports.getFriends = async (req, res, next) => {
     });
   } catch (err) {
     console.error('getFriends - Error:', err);
-    next(err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'An unexpected error occurred.',
+      user: req.session.user,
+      layout: 'layouts/main'
+    });
   }
 };
 
@@ -205,6 +294,7 @@ exports.toggleFriend = async (req, res, next) => {
       console.log('toggleFriend - Invalid friendId');
       return res.status(400).render('pages/error', {
         message: `Invalid friend ID: ${friendId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -213,6 +303,7 @@ exports.toggleFriend = async (req, res, next) => {
       console.log('toggleFriend - Invalid userId');
       return res.status(400).render('pages/error', {
         message: `Invalid user ID in session: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -225,6 +316,7 @@ exports.toggleFriend = async (req, res, next) => {
       console.log('toggleFriend - User not found');
       return res.status(404).render('pages/error', {
         message: `User not found for ID: ${userId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -233,6 +325,7 @@ exports.toggleFriend = async (req, res, next) => {
       console.log('toggleFriend - Friend not found');
       return res.status(404).render('pages/error', {
         message: `Friend not found for ID: ${friendId}`,
+        user: req.session.user,
         layout: 'layouts/main'
       });
     }
@@ -253,6 +346,10 @@ exports.toggleFriend = async (req, res, next) => {
     res.redirect(`/users/profile/${friendId}`);
   } catch (err) {
     console.error('toggleFriend - Error:', err);
-    next(err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'An unexpected error occurred.',
+      user: req.session.user,
+      layout: 'layouts/main'
+    });
   }
 };
