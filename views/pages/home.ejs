@@ -1,21 +1,60 @@
-<h1 class="text-2xl font-bold mb-4">Home</h1>
-<!-- Form tạo bài đăng -->
-<form action="/posts/create" method="POST" class="mb-6">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <textarea name="content" class="w-full p-2 border rounded" placeholder="What's on your mind?" required></textarea>
-  <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Post</button>
-</form>
-<!-- Danh sách bài đăng -->
-<div>
-  <% if (posts.length === 0) { %>
-    <p>No posts available yet.</p>
-  <% } else { %>
-    <% posts.forEach(post => { %>
-      <div class="bg-white p-4 mb-4 rounded shadow">
-        <p><strong><%= post.user.username %></strong> - <%= post.createdAt.toLocaleString() %></p>
-        <p><%= post.content %></p>
-        <p><%= post.likes.length %> Likes</p>
+<div class="container mt-5">
+  <h1 class="text-2xl font-bold mb-4">Home</h1>
+
+  <!-- Form tạo bài đăng -->
+  <form action="/posts/create" method="POST" enctype="multipart/form-data" class="mb-6">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <textarea name="content" class="w-full p-2 border rounded" placeholder="What's on your mind?" required></textarea>
+    <input type="file" name="media" accept="image/jpeg,image/png,video/mp4,video/mov,audio/mp3,audio/wav" class="mt-2">
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Post</button>
+    <% if (errors && errors.length > 0) { %>
+      <div class="text-red-500 mt-2">
+        <% errors.forEach(error => { %>
+          <p><%= error.msg %></p>
+        <% }) %>
       </div>
-    <% }) %>
-  <% } %>
+    <% } %>
+    <!-- Debug CSRF token -->
+    <script>
+      console.log('CSRF Token in form:', '<%= csrfToken %>');
+    </script>
+  </form>
+
+  <!-- Danh sách bài đăng -->
+  <div>
+    <% if (posts.length === 0) { %>
+      <p>No posts available yet.</p>
+    <% } else { %>
+      <% posts.forEach(post => { %>
+        <div class="bg-white p-4 mb-4 rounded shadow">
+          <div class="flex items-center">
+            <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" alt="Avatar"
+              class="w-10 h-10 rounded-full mr-2">
+            <div>
+              <p><strong><%= post.author.username %></strong></p>
+              <p class="text-gray-500 text-sm"><%= post.createdAt.toLocaleString() %></p>
+            </div>
+          </div>
+          <p class="mt-2"><%= post.content %></p>
+          <% if (post.media && post.media.url) { %>
+            <% if (post.media.type === 'image') { %>
+              <img src="<%= post.media.url %>" alt="Post Media" class="mt-2 max-w-full h-auto">
+            <% } else if (post.media.type === 'video') { %>
+              <video controls class="mt-2 max-w-full h-auto">
+                <source src="<%= post.media.url %>" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            <% } else if (post.media.type === 'audio') { %>
+              <audio controls class="mt-2 w-full">
+                <source src="<%= post.media.url %>" type="audio/mpeg">
+                Your browser does not support the audio element.
+              </audio>
+            <% } %>
+          <% } %>
+          <p class="mt-2"><%= post.likes.length %> Likes</p>
+          <a href="/post/<%= post._id %>" class="text-blue-500">View Post</a>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
 </div>

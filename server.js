@@ -13,6 +13,7 @@ const csurf = require('csurf');
 const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 const multer = require('multer');
+const uploadMedia = require('./utils/uploadMedia');
 require('./config/passport');
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       imgSrc: ["'self'", "https://res.cloudinary.com", "data:"],
+      mediaSrc: ["'self'", "https://res.cloudinary.com"]
     }
   }
 }));
@@ -85,7 +87,6 @@ const csrfProtection = csurf({ cookie: false });
 // Khởi tạo CSRF token cho các route GET cần render form
 app.use((req, res, next) => {
   if (req.method === 'GET') {
-    // Tạo CSRF token cho GET requests
     const csrfInstance = csurf({ cookie: false });
     csrfInstance(req, res, () => {
       res.locals.csrfToken = req.csrfToken();
@@ -128,13 +129,24 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Xử lý lỗi Multer
+// Xử lý lỗi Multer và uploadMedia
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     console.error('Multer Error:', err);
     return res.status(400).render('pages/error', {
       message: `Multer error: ${err.message}`,
       user: req.session.user,
+      layout: 'layouts/main'
+    });
+  }
+  if (err.message === 'Only images (JPEG, PNG), videos (MP4, MOV), and audio (MP3, WAV) are allowed') {
+    console.error('File Type Error:', err);
+    return res.status(400).render('pages/home', {
+      posts: [],
+      user: req.session.user,
+      csrfToken: res.locals.csrfToken,
+      errors: [{ msg: err.message }],
+      title: 'Home',
       layout: 'layouts/main'
     });
   }

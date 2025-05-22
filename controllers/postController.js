@@ -1,5 +1,8 @@
 const Post = require('../models/Post');
 const mongoose = require('mongoose');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs').promises;
+const path = require('path');
 
 exports.getHome = async (req, res, next) => {
   try {
@@ -18,6 +21,7 @@ exports.getHome = async (req, res, next) => {
       posts,
       user: req.session.user,
       csrfToken: res.locals.csrfToken,
+      errors: [],
       title: 'Home',
       layout: 'layouts/main'
     });
@@ -42,6 +46,9 @@ exports.createPost = async (req, res, next) => {
     const { content } = req.body;
     console.log('createPost - content:', content);
     if (!content || content.length > 1000) {
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(err => console.error('createPost - Delete file error:', err));
+      }
       return res.status(400).render('pages/home', {
         posts: await Post.find().populate('author', 'username avatar').sort({ createdAt: -1 }),
         user: req.session.user,
@@ -52,16 +59,77 @@ exports.createPost = async (req, res, next) => {
       });
     }
 
-    const post = new Post({
+    const postData = {
       content,
       author: req.session.user._id
-    });
+    };
+
+    // Xử lý media nếu có file upload
+    if (req.file) {
+      console.log('createPost - file:', req.file);
+      try {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        let mediaType = '';
+        let resource_type = 'auto';
+        if (['.jpg', '.jpeg', '.png'].includes(ext)) {
+          mediaType = 'image';
+          resource_type = 'image';
+        } else if (['.mp4', '.mov'].includes(ext)) {
+          mediaType = 'video';
+          resource_type = 'video';
+        } else if (['.mp3', '.wav'].includes(ext)) {
+          mediaType = 'audio';
+          resource_type = 'raw';
+        }
+
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'social-network/posts',
+          resource_type: resource_type,
+          public_id: `post_${Date.now()}_${path.basename(req.file.originalname, ext)}`
+        });
+        console.log('createPost - Cloudinary result:', result);
+        postData.media = {
+          url: result.secure_url,
+          type: mediaType
+        };
+        await fs.unlink(req.file.path).catch(err => {
+          console.error('createPost - Delete file error:', err);
+        });
+        console.log('createPost - Deleted local file:', req.file.path);
+      } catch (uploadErr) {
+        console.error('createPost - Cloudinary upload error:', uploadErr);
+        await fs.unlink(req.file.path).catch(err => console.error('createPost - Delete file error:', err));
+        return res.status(400).render('pages/home', {
+          posts: await Post.find().populate('author', 'username avatar').sort({ createdAt: -1 }),
+          user: req.session.user,
+          csrfToken: res.locals.csrfToken,
+          errors: [{ msg: 'Failed to upload media. Please try again.' }],
+          title: 'Home',
+          layout: 'layouts/main'
+        });
+      }
+    }
+
+    const post = new Post(postData);
     await post.save();
     console.log('createPost - post:', post);
 
     res.redirect('/home');
   } catch (err) {
     console.error('createPost - Error:', err);
+    if (req.file) {
+      await fs.unlink(req.file.path).catch(err => console.error('createPost - Delete file error:', err));
+    }
+    if (err instanceof mongoose.Error || err instanceof multer.MulterError) {
+      return res.status(400).render('pages/home', {
+        posts: await Post.find().populate('author', 'username avatar').sort({ createdAt: -1 }),
+        user: req.session.user,
+        csrfToken: res.locals.csrfToken,
+        errors: [{ msg: err.message }],
+        title: 'Home',
+        layout: 'layouts/main'
+      });
+    }
     res.status(500).render('pages/error', {
       message: err.message || 'An unexpected error occurred.',
       user: req.session.user,
