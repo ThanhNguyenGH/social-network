@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+    }
+    .sidebar {
+      background-color: #1f2937;
+      color: white;
+      height: 100vh;
+      position: fixed;
+      width: 250px;
+    }
+    .sidebar a {
+      color: #d1d5db;
+      padding: 1rem;
+      display: block;
+      transition: all 0.3s;
+    }
+    .sidebar a:hover {
+      background-color: #374151;
+      color: white;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 2rem;
+    }
+    .header {
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1rem 2rem;
+    }
+    .table-container {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="p-4">
+      <h2 class="text-xl font-bold">Quản trị</h2>
+    </div>
+    <nav>
+      <a href="/admin/dashboard" class="flex items-center gap-2">
+        <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
+      </a>
+      <a href="/admin/users" class="flex items-center gap-2">
+        <i class="fas fa-users"></i> Quản lý người dùng
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <div class="header flex justify-between items-center">
+      <h1 class="text-2xl font-semibold"><%= title %></h1>
+      <div class="flex items-center gap-4">
+        <span><%= currentUser?.username || 'Admin' %></span>
+        <a href="/auth/logout" class="text-red-500 hover:text-red-700">Đăng xuất</a>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="mt-6">
+      <%- body %>
+    </div>
+  </div>
+</body>
+</html>

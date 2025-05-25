@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Post = require('../models/Post');
+const Comment = require('../models/Comment');
 const mongoose = require('mongoose');
 const cloudinary = require('../config/cloudinary');
 const fs = require('fs').promises;
@@ -358,6 +360,263 @@ exports.toggleFriend = async (req, res, next) => {
       message: err.message || 'An unexpected error occurred.',
       user: req.session.user,
       layout: 'layouts/main'
+    });
+  }
+};
+
+// Middleware kiểm tra quyền admin
+exports.isAdmin = (req, res, next) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    console.log('isAdmin - Access denied:', req.session.user);
+    return res.status(403).render('pages/error', {
+      message: 'Bạn không có quyền truy cập trang quản trị.',
+      user: req.session.user,
+      layout: 'layouts/admin'
+    });
+  }
+  next();
+};
+
+// Trang dashboard admin
+exports.getAdminDashboard = async (req, res, next) => {
+  try {
+    console.log('getAdminDashboard - session.user:', req.session.user);
+    // Lấy một số thông tin thống kê cơ bản (tùy chọn)
+    const totalUsers = await User.countDocuments();
+    res.render('admin/dashboard', {
+      currentUser: req.session.user,
+      totalUsers,
+      title: 'Bảng điều khiển quản trị',
+      layout: 'layouts/admin'
+    });
+  } catch (err) {
+    console.error('getAdminDashboard - Error:', err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'Đã xảy ra lỗi khi tải bảng điều khiển.',
+      user: req.session.user,
+      layout: 'layouts/admin'
+    });
+  }
+};
+
+// Lấy danh sách tất cả người dùng
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    console.log('getAllUsers - session.user:', req.session.user);
+    const users = await User.find().select('username email role createdAt');
+    res.render('admin/users', {
+      users,
+      currentUser: req.session.user, // Truyền currentUser
+      title: 'Quản lý người dùng',
+      layout: 'layouts/admin',
+      csrfToken: res.locals.csrfToken
+    });
+  } catch (err) {
+    console.error('getAllUsers - Error:', err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'Đã xảy ra lỗi khi tải danh sách người dùng.',
+      user: req.session.user,
+      layout: 'layouts/main'
+    });
+  }
+};
+// Form tạo người dùng mới (admin)
+exports.getCreateUser = (req, res) => {
+  console.log('getCreateUser - session.user:', req.session.user);
+  res.render('admin/edit-user', {
+    user: null,
+    errors: [],
+    csrfToken: res.locals.csrfToken,
+    title: 'Tạo người dùng mới',
+    layout: 'layouts/admin'
+  });
+};
+
+// Lấy thông tin người dùng để chỉnh sửa
+exports.getEditUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    console.log('getEditUser - userId:', userId);
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).render('pages/error', {
+        message: 'ID người dùng không hợp lệ.',
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+    const user = await User.findById(userId).select('username email role bio isBanned banReason');
+    if (!user) {
+      return res.status(404).render('pages/error', {
+        message: 'Không tìm thấy người dùng.',
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+    res.render('admin/edit-user', {
+      user,
+      currentUser: req.session.user,
+      title: 'Chỉnh sửa người dùng',
+      layout: 'layouts/admin',
+      csrfToken: res.locals.csrfToken,
+      errors: []
+    });
+  } catch (err) {
+    console.error('getEditUser - Error:', err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'Đã xảy ra lỗi khi tải thông tin người dùng.',
+      user: req.session.user,
+      layout: 'layouts/admin'
+    });
+  }
+};
+
+// Cập nhật người dùng (admin)
+exports.updateUser = async (req, res, next) => {
+  try {
+    console.log('updateUser - session.user:', req.session.user);
+    const userId = req.params.id;
+    const { username, email, role, bio, isBanned, banReason } = req.body;
+    console.log('updateUser - userId:', userId, 'body:', req.body);
+
+    if (!mongoose.isValidObjectId(userId)) {
+      console.log('updateUser - Invalid userId');
+      return res.status(400).render('pages/error', {
+        message: `ID người dùng không hợp lệ: ${userId}`,
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+
+    // Validate input
+    const errors = [];
+    if (!username || username.length < 3) {
+      errors.push({ msg: 'Tên người dùng phải có ít nhất 3 ký tự.' });
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push({ msg: 'Vui lòng nhập email hợp lệ.' });
+    }
+    if (!['user', 'admin'].includes(role)) {
+      errors.push({ msg: 'Vai trò không hợp lệ.' });
+    }
+    if (bio && bio.length > 500) {
+      errors.push({ msg: 'Tiểu sử không được vượt quá 500 ký tự.' });
+    }
+    if (isBanned === 'on' && !banReason) {
+      errors.push({ msg: 'Vui lòng chọn lý do cấm.' });
+    }
+
+    // Kiểm tra username hoặc email đã tồn tại
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+      _id: { $ne: userId }
+    });
+    if (existingUser) {
+      if (existingUser.username === username) {
+        errors.push({ msg: 'Tên người dùng đã được sử dụng.' });
+      }
+      if (existingUser.email === email) {
+        errors.push({ msg: 'Email đã được đăng ký.' });
+      }
+    }
+
+    if (errors.length > 0) {
+      console.log('updateUser - Validation errors:', errors);
+      return res.status(400).render('admin/edit-user', {
+        user: { _id: userId, username, email, role, bio, isBanned: isBanned === 'on', banReason },
+        errors,
+        currentUser: req.session.user,
+        csrfToken: res.locals.csrfToken,
+        title: 'Chỉnh sửa người dùng',
+        layout: 'layouts/admin'
+      });
+    }
+
+    const updateData = {
+      username,
+      email,
+      role,
+      bio,
+      isBanned: isBanned === 'on',
+      banReason: isBanned === 'on' ? banReason : null
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('username email role avatar bio isBanned banReason');
+
+    console.log('updateUser - updatedUser:', updatedUser);
+    if (!updatedUser) {
+      console.log('updateUser - User not found');
+      return res.status(404).render('pages/error', {
+        message: `Không tìm thấy người dùng với ID: ${userId}`,
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('updateUser - Error:', err);
+    res.status(500).render('admin/edit-user', {
+      user: { _id: userId, username, email, role, bio, isBanned: isBanned === 'on', banReason },
+      errors: [{ msg: err.message || 'Đã xảy ra lỗi khi cập nhật người dùng.' }],
+      currentUser: req.session.user,
+      csrfToken: res.locals.csrfToken,
+      title: 'Chỉnh sửa người dùng',
+      layout: 'layouts/admin'
+    });
+  }
+};
+
+// Xóa người dùng (admin)
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    console.log('deleteUser - userId:', userId);
+    if (!mongoose.isValidObjectId(userId)) {
+      console.log('deleteUser - Invalid userId');
+      return res.status(400).render('pages/error', {
+        message: `ID người dùng không hợp lệ: ${userId}`,
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('deleteUser - User not found');
+      return res.status(404).render('pages/error', {
+        message: `Không tìm thấy người dùng với ID: ${userId}`,
+        user: req.session.user,
+        layout: 'layouts/admin'
+      });
+    }
+
+    // Xóa các bài đăng của người dùng
+    await Post.deleteMany({ user: userId });
+
+    // Xóa các bình luận của người dùng
+    await Comment.deleteMany({ user: userId });
+
+    // Xóa người dùng khỏi danh sách bạn bè của người khác
+    await User.updateMany(
+      { friends: userId },
+      { $pull: { friends: userId } }
+    );
+
+    // Xóa người dùng
+    await User.findByIdAndDelete(userId);
+
+    console.log('deleteUser - Deleted user and related data:', userId);
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('deleteUser - Error:', err);
+    res.status(500).render('pages/error', {
+      message: err.message || 'Đã xảy ra lỗi khi xóa người dùng.',
+      user: req.session.user,
+      layout: 'layouts/admin'
     });
   }
 };

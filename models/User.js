@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String }, // URL từ Cloudinary
   bio: { type: String },
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  isBanned: { type: Boolean, default: false },
+  banReason: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

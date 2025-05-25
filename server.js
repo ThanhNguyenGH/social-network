@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -14,6 +13,8 @@ const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 const multer = require('multer');
 const uploadMedia = require('./utils/uploadMedia');
+const { isAdmin, getAdminDashboard, getAllUsers, getEditUser, updateUser, deleteUser } = require('./controllers/userController');
+
 require('./config/passport');
 
 const app = express();
@@ -22,6 +23,9 @@ const io = socketIo(server);
 
 // Tăng timeout server
 server.setTimeout(60000);
+
+// Lưu instance io vào app
+app.set('io', io);
 
 // Kết nối MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
@@ -34,13 +38,15 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       imgSrc: ["'self'", "https://res.cloudinary.com", "data:"],
-      mediaSrc: ["'self'", "https://res.cloudinary.com"]
+      mediaSrc: ["'self'", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"] // Thêm connectSrc cho WebSocket
     }
   }
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // EJS và Layout
 app.set('view engine', 'ejs');
@@ -66,6 +72,11 @@ const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
+
+// Áp dụng session middleware cho Socket.IO
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
 
 // Log session Redis
 app.use(async (req, res, next) => {
@@ -171,23 +182,64 @@ app.use(passport.session());
 // Rate limiting
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 1000
 }));
 
-// Socket.io
+// Socket.IO
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  socket.on('disconnect', () => console.log('User disconnected:', socket.id));
+  const session = socket.request.session;
+  if (!session.user || !session.user._id) {
+    console.log('Socket.IO: No user session found for socket', socket.id);
+    socket.disconnect(true);
+    return;
+  }
+
+  socket.on('subscribe', (postId) => {
+    if (mongoose.isValidObjectId(postId)) {
+      socket.join(postId);
+      console.log(`Socket ${socket.id} subscribed to post ${postId}`);
+    } else {
+      console.log(`Socket ${socket.id} tried to subscribe to invalid postId: ${postId}`);
+    }
+  });
+
+  socket.on('unsubscribe', (postId) => {
+    socket.leave(postId);
+    console.log(`Socket ${socket.id} unsubscribed from post ${postId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
 });
+
+// Hàm để phát bình luận mới
+function broadcastComment(postId, comment) {
+  io.to(postId).emit('newComment', { postId, comment });
+}
+module.exports.broadcastComment = broadcastComment;
 
 // Routes
 app.get('/', (req, res) => {
   if (req.session.user || req.isAuthenticated()) {
-    res.redirect('/home');
+    // Kiểm tra vai trò admin
+    if (req.session.user && req.session.user.role === 'admin') {
+      res.redirect('/admin/dashboard');
+    } else {
+      res.redirect('/home');
+    }
   } else {
     res.redirect('/auth/login');
   }
 });
+
+// Admin routes
+app.get('/admin/dashboard', isAdmin, csrfProtection, getAdminDashboard);
+app.get('/admin/users', isAdmin, csrfProtection, getAllUsers);
+app.get('/admin/users/edit/:id', isAdmin, csrfProtection, getEditUser);
+app.post('/admin/users/edit/:id', isAdmin, csrfProtection, updateUser);
+app.post('/admin/users/delete/:id', isAdmin, csrfProtection, deleteUser);
 
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/users', require('./routes/userRoutes'));
@@ -195,6 +247,7 @@ app.use(require('./routes/postRoutes'));
 app.use('/comments', require('./routes/commentRoutes'));
 app.use('/chat', require('./routes/chatRoutes'));
 app.use('/notifications', require('./routes/notificationRoutes'));
+
 
 // Error handling
 app.use(require('./middleware/errorHandler'));

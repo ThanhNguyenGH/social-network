@@ -1,6 +1,21 @@
-body {
-    font-family: Arial, sans-serif;
-  }
-  .container {
-    max-width: 1200px;
-  }
+.layout-container {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.sidebar-left,
+.sidebar-right {
+  position: sticky;
+  top: 0; 
+  align-self: flex-start; 
+  height: fit-content;
+  max-height: calc(100vh - 64px);
+}
+
+
+.main-content {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  min-width: 0;
+}

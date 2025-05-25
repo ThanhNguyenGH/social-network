@@ -15,15 +15,15 @@ router.get('/register', csrfProtection, (req, res, next) => {
   res.render('pages/register', {
     errors: [],
     csrfToken: res.locals.csrfToken,
-    layout: 'layouts/main'
+    layout: false
   });
 });
 
 // POST /auth/register
 router.post('/register', csrfProtection, [
-  check('username').notEmpty().withMessage('Username is required').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-  check('email').isEmail().withMessage('Invalid email'),
-  check('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  check('username').notEmpty().withMessage('Tên người dùng là bắt buộc').isLength({ min: 3 }).withMessage('Tên người dùng phải có ít nhất 3 ký tự'),
+  check('email').isEmail().withMessage('Email không hợp lệ'),
+  check('password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự')
 ], authController.register);
 
 // GET /auth/login
@@ -31,23 +31,44 @@ router.get('/login', csrfProtection, (req, res, next) => {
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
   next();
 }, (req, res) => {
+  const successMessage = req.session.successMessage;
+  delete req.session.successMessage;
   res.render('pages/login', {
     errors: [],
+    successMessage,
     csrfToken: res.locals.csrfToken,
-    layout: 'layouts/main'
+    layout: false
   });
 });
 
 // POST /auth/login
 router.post('/login', csrfProtection, [
-  check('email').isEmail().withMessage('Invalid email'),
-  check('password').notEmpty().withMessage('Password is required')
+  check('email').isEmail().withMessage('Email không hợp lệ'),
+  check('password').notEmpty().withMessage('Mật khẩu là bắt buộc')
 ], authController.login);
 
 // Google OAuth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }), (req, res) => {
-  req.session.user = req.user;
+  if (!req.user) {
+    return res.status(400).render('pages/login', {
+      errors: [{ msg: 'Đăng nhập bằng Google thất bại' }],
+      successMessage,
+      csrfToken: res.locals.csrfToken,
+      layout: false
+    });
+  }
+  req.session.user = {
+    _id: req.user._id,
+    username: req.user.username,
+    email: req.user.email,
+    role: req.user.role,
+    avatar: req.user.avatar
+  };
+  console.log('Google callback - session.user:', req.session.user); // Log để debug
+  if (req.user.role === 'admin') {
+    return res.redirect('/admin/dashboard');
+  }
   res.redirect('/home');
 });
 

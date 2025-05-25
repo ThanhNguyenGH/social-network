@@ -1,10 +1,13 @@
 const express = require('express');
-const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
+const commentController = require('../controllers/commentController');
+const csurf = require('csurf');
 
-// Placeholder cho bình luận
-router.post('/:postId', isAuthenticated, (req, res) => {
-  res.redirect('/home');
-});
+const csrfProtection = csurf({ cookie: false });
+
+router.post('/create', csrfProtection, commentController.createComment);
+router.get('/:postId', commentController.getComments);
+router.put('/:id/edit', csrfProtection, commentController.editComment);
+router.delete('/:id/delete', csrfProtection, commentController.deleteComment);
 
 module.exports = router;

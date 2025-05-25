@@ -1,0 +1,136 @@
+/* Reset mặc định */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Định kiểu cho container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Định kiểu cho bảng trong admin/users.ejs */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  margin-bottom: 1rem;
+}
+
+table th, table td {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+table tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Định kiểu cho form trong admin/edit-user.ejs */
+form .mb-4 {
+  margin-bottom: 1rem;
+}
+
+form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form textarea,
+form select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+form button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+form button[type="submit"] {
+  background-color: #3b82f6;
+  color: #fff;
+  border: none;
+}
+
+form button[type="submit"]:hover {
+  background-color: #2563eb;
+}
+
+form a.bg-gray-500 {
+  background-color: #6b7280;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+}
+
+form a.bg-gray-500:hover {
+  background-color: #4b5563;
+}
+
+/* Định kiểu cho thông báo lỗi */
+.bg-red-100 {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+/* Định kiểu cho header và footer */
+header.bg-blue-600 {
+  background-color: #3b82f6;
+}
+
+footer.bg-gray-800 {
+  background-color: #1f2937;
+}
+
+/* Định kiểu cho nav links */
+nav a {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  table th, table td {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+}

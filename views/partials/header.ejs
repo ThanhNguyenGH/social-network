@@ -1,12 +1,21 @@
-<header class="bg-blue-600 text-white p-4">
+<header class="bg-white text-black p-4 shadow">
   <nav class="container mx-auto flex justify-between items-center">
-    <a href="/" class="text-xl font-bold">Social Network</a>
+    <!-- Logo -->
+    <a href="/" class="text-xl font-bold text-blue-600">Social Network</a>
+
+    <!-- Thanh tìm kiếm -->
+    <div class="flex-1 mx-4">
+      <input type="text" placeholder="Search" class="w-full p-2 border rounded">
+    </div>
+
+    <!-- Nút Create -->
     <div>
       <% if (user) { %>
-        <a href="/home" class="mx-2">Home</a>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded flex items-center">
+          <span class="mr-2">+</span> Create
+        </button>
         <a href="/users/profile/<%= user._id %>" class="mx-2">Profile</a>
         <a href="/chat" class="mx-2">Chat</a>
-        <a href="/users/search" class="mx-2">Search</a>
         <a href="/auth/logout" class="mx-2">Logout</a>
       <% } else { %>
         <a href="/auth/login" class="mx-2">Login</a>

@@ -1,3 +1,21 @@
-<footer class="bg-gray-800 text-white text-center p-4 mt-4">
-    <p>&copy; 2025 Social Network. All rights reserved.</p>
-  </footer>
+<footer class="bg-gray-800 text-white p-4 mt-8">
+  <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+    <!-- Logo hoặc tên trang -->
+    <div class="mb-4 md:mb-0">
+      <a href="/" class="text-lg font-bold">Social Network</a>
+    </div>
+
+    <!-- Liên kết quan trọng -->
+    <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6">
+      <a href="/about" class="hover:underline">About</a>
+      <a href="/privacy" class="hover:underline">Privacy Policy</a>
+      <a href="/terms" class="hover:underline">Terms of Service</a>
+      <a href="/contact" class="hover:underline">Contact Us</a>
+    </div>
+
+    <!-- Bản quyền -->
+    <div class="mt-4 md:mt-0">
+      <p>&copy; <%= new Date().getFullYear() %> Social Network. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

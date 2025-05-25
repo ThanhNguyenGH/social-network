@@ -1,24 +1,44 @@
-<h1 class="text-2xl font-bold mb-4">Register</h1>
-<% if (errors && errors.length) { %>
-  <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">
-    <% errors.forEach(error => { %>
-      <p><%= error.msg %></p>
-    <% }) %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-4">Register</h1>
+
+    <% if (errors && errors.length) { %>
+      <div class="bg-red-100 text-red-700 p-2 mb-4 rounded">
+        <% errors.forEach(error => { %>
+          <p><%= error.msg %></p>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <form action="/auth/register" method="POST" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div>
+        <label for="username" class="block">Username</label>
+        <input type="text" name="username" id="username" class="w-full p-2 border rounded" required 
+                value="<%= typeof username !== 'undefined' ? username : '' %>">
+      </div>
+      <div>
+        <label for="email" class="block">Email</label>
+        <input type="email" name="email" id="email" class="w-full p-2 border rounded" required value="<%= typeof email !== 'undefined' ? email : '' %>">
+      </div>
+      <div>
+        <label for="password" class="block">Password</label>
+        <input type="password" name="password" id="password" class="w-full p-2 border rounded" required>
+      </div>
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Register</button>
+    </form>
+
+    <p class="text-center mt-4 text-sm">
+      Đã có tài khoản?
+      <a href="/auth/login" class="text-blue-500 hover:underline">Đăng nhập</a>
+    </p>
   </div>
-<% } %>
-<form action="/auth/register" method="POST" class="max-w-md">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="mb-4">
-    <label for="username" class="block">Username</label>
-    <input type="text" name="username" id="username" class="w-full p-2 border rounded" required>
-  </div>
-  <div class="mb-4">
-    <label for="email" class="block">Email</label>
-    <input type="email" name="email" id="email" class="w-full p-2 border rounded" required>
-  </div>
-  <div class="mb-4">
-    <label for="password" class="block">Password</label>
-    <input type="password" name="password" id="password" class="w-full p-2 border rounded" required>
-  </div>
-  <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Register</button>
-</form>
+</body>
+</html>

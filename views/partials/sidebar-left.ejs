@@ -1,0 +1,43 @@
+<aside class="sidebar-left space-y-6">
+
+  <!-- Group: Thông tin người dùng -->
+  <div class="bg-white p-4 rounded shadow border border-gray-200">
+    <div class="flex items-center">
+      <a href="/users/profile/<%= user._id %>" class="flex items-center">
+        <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar" class="w-12 h-12 rounded-full mr-3">
+        <p class="font-bold text-lg">
+          <%= user ? user.username : 'username' %>
+        </p>
+      </a>
+    </div>
+  </div>
+
+  <!-- Group: Menu điều hướng -->
+  <div class="bg-white p-4 rounded shadow border border-gray-200">
+    <h3 class="font-bold text-lg mb-4">Navigation</h3>
+    <nav>
+      <ul class="space-y-3">
+        <li><a href="/home" class="flex items-center hover:text-blue-500"><span class="mr-2">🏠</span> Home</a></li>
+        <li><a href="/users/search" class="flex items-center hover:text-blue-500"><span class="mr-2">👥</span>
+            People</a></li>
+        <li><a href="/photos" class="flex items-center hover:text-blue-500"><span class="mr-2">📷</span> Photos</a></li>
+        <li><a href="/newsfeed" class="flex items-center hover:text-blue-500"><span class="mr-2">📰</span> News Feed</a>
+        </li>
+        <li><a href="/users/profile/<%= user ? user._id : '' %>" class="flex items-center hover:text-blue-500"><span
+              class="mr-2">👤</span> Profile</a></li>
+        <li><a href="/settings" class="flex items-center hover:text-blue-500"><span class="mr-2">⚙️</span> Settings</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Group: Lời mời -->
+  <div class="bg-white p-4 rounded shadow border border-gray-200">
+    <h3 class="font-bold text-lg mb-4">Invitations</h3>
+    <div>
+      <p class="text-sm text-gray-700">How to Build a Strong Company</p>
+      <button class="bg-blue-500 text-white px-3 py-1 rounded mt-3">Accept Invitation</button>
+    </div>
+  </div>
+
+</aside>
