@@ -396,3 +396,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const backToTopBtn = document.getElementById('back-to-top');
+
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // cuộn mượt mà
+      });
+    });
+
+    // Tuỳ chọn: Hiện nút khi cuộn xuống
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopBtn.style.display = 'inline';
+      } else {
+        backToTopBtn.style.display = 'none';
+      }
+    });
+
+    // Ẩn nút lúc đầu nếu cần
+    backToTopBtn.style.display = 'none';
+  }
+});

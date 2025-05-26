@@ -5,21 +5,21 @@
 
     <!-- Thanh tìm kiếm -->
     <div class="flex-1 mx-4">
-      <input type="text" placeholder="Search" class="w-full p-2 border rounded">
+      <form action="/users/search" method="GET">
+        <input 
+          type="text" 
+          name="query" 
+          placeholder="Search" 
+          class="w-full p-2 border rounded" 
+          required
+        >
+      </form>
     </div>
 
-    <!-- Nút Create -->
+    <!-- Nút Logout -->
     <div>
       <% if (user) { %>
-        <button class="bg-blue-500 text-white px-4 py-2 rounded flex items-center">
-          <span class="mr-2">+</span> Create
-        </button>
-        <a href="/users/profile/<%= user._id %>" class="mx-2">Profile</a>
-        <a href="/chat" class="mx-2">Chat</a>
         <a href="/auth/logout" class="mx-2">Logout</a>
-      <% } else { %>
-        <a href="/auth/login" class="mx-2">Login</a>
-        <a href="/auth/register" class="mx-2">Register</a>
       <% } %>
     </div>
   </nav>

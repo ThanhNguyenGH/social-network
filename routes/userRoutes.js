@@ -3,7 +3,6 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../utils/upload');
 const csrf = require('csurf');
-const { isAdmin } = userController;
 
 const csrfProtection = csrf({ cookie: false });
 

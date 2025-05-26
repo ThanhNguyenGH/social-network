@@ -206,39 +206,56 @@ exports.updateProfile = async (req, res, next) => {
 // Tìm kiếm người dùng
 exports.searchUsers = async (req, res, next) => {
   try {
-    const { query } = req.query;
-    console.log('searchUsers - query:', query);
-    if (!query) {
-      return res.render('pages/search', {
-        users: [],
-        query: '',
-        title: 'Search Users',
-        currentUser: req.session.user,
-        layout: 'layouts/main'
-      });
+    if (!req.session.user || !req.session.user._id) {
+      return res.redirect('/auth/login');
     }
 
-    const users = await User.find({
-      username: { $regex: query, $options: 'i' }
-    }).select('username email avatar _id');
-    console.log('searchUsers - users:', users);
+    const query = req.query.query ? req.query.query.trim() : '';
+    let users = [];
+    let posts = [];
+
+    if (query) {
+      // Có query: tìm theo username/email và bài viết
+      users = await User.find({
+        $or: [
+          { username: { $regex: query, $options: 'i' } },
+          { email: { $regex: query, $options: 'i' } }
+        ]
+      }).select('username email avatar').lean();
+
+      posts = await Post.find({
+        content: { $regex: query, $options: 'i' }
+      })
+        .populate('author', 'username avatar')
+        .sort({ createdAt: -1 })
+        .lean();
+
+    } else {
+      // Không có query: lấy tất cả người dùng
+      users = await User.find().select('username email avatar').lean();
+    }
 
     res.render('pages/search', {
       users,
+      posts,
       query,
-      title: 'Search Users',
+      user: req.session.user,
       currentUser: req.session.user,
+      csrfToken: req.csrfToken ? req.csrfToken() : '',
+      title: `Kết quả tìm kiếm: ${query || 'Tất cả'}`,
       layout: 'layouts/main'
     });
   } catch (err) {
-    console.error('searchUsers - Error:', err);
     res.status(500).render('pages/error', {
-      message: err.message || 'An unexpected error occurred.',
+      message: err.message || 'Đã xảy ra lỗi khi tìm kiếm.',
       user: req.session.user,
-      layout: 'layouts/main'
+      currentUser: req.session.user,
+      layout: 'layouts/main',
+      title: 'Lỗi'
     });
   }
 };
+
 
 // Xem danh sách bạn bè
 exports.getFriends = async (req, res, next) => {

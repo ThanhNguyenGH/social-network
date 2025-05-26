@@ -1,30 +1,91 @@
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-semibold mb-4">Kết quả tìm kiếm cho "<%= query || 'Tất cả' %>"</h1>
+  <!-- Tabs -->
+  <div class="mb-6">
+    <ul class="flex border-b">
+      <li class="-mb-px mr-1">
+        <a href="#users" data-tab="users"
+          class="tab-link bg-white inline-block border-l border-t border-r rounded-t px-4 py-2 text-blue-600 font-semibold hover:text-blue-800 active-tab">
+          Mọi người
+        </a>
+      </li>
+      <li class="mr-1">
+        <a href="#posts" data-tab="posts"
+          class="tab-link bg-white inline-block px-4 py-2 text-gray-600 font-semibold hover:text-blue-800">
+          Bài đăng
+        </a>
+      </li>
+    </ul>
+  </div>
 
-<div class="container mt-5">
-  
-  <h1>Search Users</h1>
-  <form action="/users/search" method="GET" class="mb-4">
-    <div class="input-group">
-      <input type="text" class="form-control" name="query" placeholder="Search by username" value="<%= query %>">
-      <button type="submit" class="btn btn-primary">Search</button>
-    </div>
-  </form>
 
-  <% if (users.length > 0) { %>
-    <h3>Results</h3>
-    <div class="row">
-      <% users.forEach(user => { %>
-        <div class="col-md-4 mb-3">
-          <div class="card">
-            <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar" class="card-img-top" width="100" height="100">
-            <div class="card-body">
-              <h5 class="card-title"><a href="/users/profile/<%= user._id %>"><%= user.username %></a></h5>
-              <p class="card-text"><%= user.email %></p>
+  <!-- User Results -->
+  <div id="users-tab" class="tab-content">
+    <% if (users.length> 0) { %>
+      <div class="grid md:grid-cols-3 gap-4">
+        <% users.forEach(user=> { %>
+          <div class="bg-white shadow rounded p-4 flex items-center space-x-4">
+            <a href="/users/profile/<%= user._id %>">
+              <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar"
+                class="w-16 h-16 rounded-full object-cover">
+            </a>
+            <div>
+              <a href="/users/profile/<%= user._id %>" class="text-lg font-bold text-blue-600">
+                <%= user.username %>
+              </a>
+              <p class="text-gray-500">
+                <%= user.email %>
+              </p>
             </div>
           </div>
-        </div>
-      <% }) %>
-    </div>
-  <% } else if (query) { %>
-    <p>No users found for "<%= query %>".</p>
-  <% } %>
+          <% }) %>
+      </div>
+      <% } else { %>
+        <p class="text-gray-500">Không có người dùng nào để hiển thị.</p>
+        <% } %>
+  </div>
+
+  <!-- Post Results -->
+  <div id="posts-tab" class="tab-content hidden">
+    <% if (posts.length> 0) { %>
+      <div class="space-y-4">
+        <% posts.forEach(post=> { %>
+          <div class="bg-white shadow rounded p-4">
+            <div class="flex items-center mb-2">
+              <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" alt="Avatar"
+                class="w-10 h-10 rounded-full mr-2">
+              <span class="font-bold">
+                <%= post.author.username %>
+              </span>
+              <span class="ml-auto text-sm text-gray-400">
+                <%= new Date(post.createdAt).toLocaleString('vi-VN') %>
+              </span>
+            </div>
+            <p class="text-gray-800">
+              <%= post.content %>
+            </p>
+            <% if (post.media && post.media.url) { %>
+              <% if (post.media.type==='image' ) { %>
+                <img src="<%= post.media.url %>" class="mt-2 rounded-lg w-full max-h-64 object-cover" />
+                <% } else if (post.media.type==='video' ) { %>
+                  <video controls class="mt-2 w-full rounded-lg">
+                    <source src="<%= post.media.url %>" type="video/mp4" />
+                    Trình duyệt của bạn không hỗ trợ video.
+                  </video>
+                  <% } else if (post.media.type==='audio' ) { %>
+                    <audio controls class="mt-2 w-full">
+                      <source src="<%= post.media.url %>" type="audio/mpeg" />
+                      Trình duyệt của bạn không hỗ trợ âm thanh.
+                    </audio>
+                    <% } %>
+                      <% } %>
+          </div>
+          <% }) %>
+      </div>
+      <% } else if (query) { %>
+        <p class="text-gray-500">Không tìm thấy bài đăng nào cho "<%= query %>".</p>
+        <% } %>
+  </div>
 </div>
+
+<script src="/js/search-tabs.js"></script>
