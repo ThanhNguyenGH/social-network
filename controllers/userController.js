@@ -214,8 +214,11 @@ exports.searchUsers = async (req, res, next) => {
     let users = [];
     let posts = [];
 
+    // Luôn lấy tất cả người dùng
+    users = await User.find().select('username email avatar').lean();
+
+    // Nếu có query, lọc người dùng và bài đăng
     if (query) {
-      // Có query: tìm theo username/email và bài viết
       users = await User.find({
         $or: [
           { username: { $regex: query, $options: 'i' } },
@@ -229,16 +232,17 @@ exports.searchUsers = async (req, res, next) => {
         .populate('author', 'username avatar')
         .sort({ createdAt: -1 })
         .lean();
-
-    } else {
-      // Không có query: lấy tất cả người dùng
-      users = await User.find().select('username email avatar').lean();
     }
+
+    // Lấy danh sách bạn bè
+    const user = await User.findById(req.session.user._id).populate('friends', 'username avatar').lean();
+    const friends = user.friends || [];
 
     res.render('pages/search', {
       users,
       posts,
       query,
+      friends,
       user: req.session.user,
       currentUser: req.session.user,
       csrfToken: req.csrfToken ? req.csrfToken() : '',

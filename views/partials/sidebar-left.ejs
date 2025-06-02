@@ -1,5 +1,4 @@
 <aside class="sidebar-left space-y-6">
-
   <!-- Group: Thông tin người dùng -->
   <div class="bg-white p-4 rounded shadow border border-gray-200">
     <div class="flex items-center">
@@ -18,15 +17,12 @@
     <nav>
       <ul class="space-y-3">
         <li><a href="/home" class="flex items-center hover:text-blue-500"><span class="mr-2">🏠</span> Home</a></li>
-        <li><a href="/users/search" class="flex items-center hover:text-blue-500"><span class="mr-2">👥</span>
-            People</a></li>
+        <li><a href="/users/search" class="flex items-center hover:text-blue-500"><span class="mr-2">👥</span> People</a></li>
         <li><a href="/photos" class="flex items-center hover:text-blue-500"><span class="mr-2">📷</span> Photos</a></li>
-        <li><a href="/newsfeed" class="flex items-center hover:text-blue-500"><span class="mr-2">📰</span> News Feed</a>
-        </li>
-        <li><a href="/users/profile/<%= user ? user._id : '' %>" class="flex items-center hover:text-blue-500"><span
-              class="mr-2">👤</span> Profile</a></li>
-        <li><a href="/settings" class="flex items-center hover:text-blue-500"><span class="mr-2">⚙️</span> Settings</a>
-        </li>
+        <li><a href="/newsfeed" class="flex items-center hover:text-blue-500"><span class="mr-2">📰</span> News Feed</a></li>
+        <li><a href="/chat" class="flex items-center hover:text-blue-500"><span class="mr-2">💬</span> Chat</a></li>
+        <li><a href="/users/profile/<%= user ? user._id : '' %>" class="flex items-center hover:text-blue-500"><span class="mr-2">👤</span> Profile</a></li>
+        <li><a href="/settings" class="flex items-center hover:text-blue-500"><span class="mr-2">⚙️</span> Settings</a></li>
       </ul>
     </nav>
   </div>
@@ -39,5 +35,4 @@
       <button class="bg-blue-500 text-white px-3 py-1 rounded mt-3">Accept Invitation</button>
     </div>
   </div>
-
 </aside>

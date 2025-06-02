@@ -1,38 +1,49 @@
-<!-- Sidebar phải -->
-<aside class="sidebar-right">
-    <div class="mb-6">
-        <!-- div này chứa các thông báo, ẩn nó đi và để số thông báo màu đỏ, bấm vào sẽ hiện modal (khung thông báo) -->
-        <h3 class="font-bold mb-2">Requests</h3>
-        <div class="bg-white p-4 rounded shadow mb-2">
-            <p class="font-semibold">Tyrell Barrows wants to add you to friends</p>
-            <div class="mt-2 flex space-x-2">
-                <button class="bg-blue-500 text-white px-3 py-1 rounded">Accept</button>
-                <button class="bg-gray-300 text-black px-3 py-1 rounded">Decline</button>
-            </div>
-        </div>
-        <div class="bg-white p-4 rounded shadow">
-            <p class="font-semibold">Selena Gomez wants to add you to friends</p>
-            <div class="mt-2 flex space-x-2">
-                <button class="bg-blue-500 text-white px-3 py-1 rounded">Accept</button>
-                <button class="bg-gray-300 text-black px-3 py-1 rounded">Decline</button>
-            </div>
-        </div>
-    </div>
-    <div>
-        <h3 class="font-bold mb-2">Contacts</h3>
-        <ul class="space-y-2"> 
-            <!-- div này là khung bạn bè (friend) hiện danh sách bạn bè, khi ấn vào một avatar hay tên một người nào đó sẽ hiện modal (box chat) góc dưới bên phải che đi danh sách bạn bè, và có thể ẩn hiện khi người dùng bấm vào, phía trên bên phải avatar của bạn bè sẽ hiện số tin nhắn họ đã gửi nhưng đối phương (user) chưa xem-->
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-orange-500 mr-2"></span> Amanda Miles
-            </li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-yellow-500 mr-2"></span> Melissa Byron
-            </li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-green-500 mr-2"></span> Ronald Bezos</li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-red-500 mr-2"></span> Billy Rosewood</li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-blue-500 mr-2"></span> Katty Monroe</li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-purple-500 mr-2"></span> Kurt Williamson
-            </li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-pink-500 mr-2"></span> Sarah Whitman</li>
-            <li class="flex items-center"><span class="w-8 h-8 rounded-full bg-teal-500 mr-2"></span> Alena Vinkova</li>
-        </ul>
-    </div>
+<!-- sidebar-right.ejs -->
+<aside class="sidebar-right w-64 bg-gray-50 p-4" data-current-user-id="<%= currentUser ? currentUser._id : null %>">
+  <div class="mb-6">
+    <h3 class="font-bold mb-2">Yêu cầu kết bạn</h3>
+    <!-- ... giữ nguyên phần yêu cầu kết bạn ... -->
+  </div>
+
+  <div>
+    <h3 class="font-bold mb-2">Danh sách bạn bè</h3>
+    <ul class="space-y-2" id="friend-list">
+      <% if (friends && friends.length > 0) { %>
+        <% friends.forEach(friend => { %>
+          <% const avatar = friend.avatar || '/images/default-avatar.png'; %>
+          <li class="friend-item flex items-center cursor-pointer hover:bg-white p-2 rounded"
+              data-id="<%= friend._id %>"
+              data-username="<%= friend.username %>"
+              data-avatar="<%= avatar %>">
+            <img src="<%= avatar %>" alt="Avatar" class="w-8 h-8 rounded-full mr-2">
+            <span class="flex-1"><%= friend.username %></span>
+            <% if (unreadMap && unreadMap[friend._id.toString()]) { %>
+              <span class="unread-badge bg-red-500 text-white text-xs rounded-full px-2 py-1 animate-pulse">
+                <%= unreadMap[friend._id.toString()] %>
+              </span>
+            <% } %>
+          </li>
+        <% }) %>
+      <% } else { %>
+        <li class="text-gray-500">Không có bạn bè nào để hiển thị.</li>
+      <% } %>
+    </ul>
+  </div>
 </aside>
+
+<!-- Minimized Chat -->
+<div id="minimizedChat" class="fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-lg shadow-lg cursor-pointer hidden z-40">
+  <div class="flex items-center">
+    <img id="minimizedAvatar" src="/images/default-avatar.png" alt="" class="w-6 h-6 rounded-full mr-2">
+    <span id="minimizedName">Chat</span>
+    <span id="minimizedUnread" class="ml-2 bg-red-500 text-xs rounded-full px-2 py-1 hidden animate-pulse">0</span>
+  </div>
+</div>
+
+<%- include('../partials/chat-modal') %>
+
+
+<!-- Include Scripts -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/sidebar-right.js"></script>
+<script src="/js/chat-modal.js"></script>

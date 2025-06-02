@@ -1,10 +1,12 @@
 const express = require('express');
-const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
+const chatController = require('../controllers/chatController');
 
-// Trang chat (placeholder)
-router.get('/', isAuthenticated, (req, res) => {
-  res.render('pages/chat', { user: req.session.user, csrfToken: req.csrfToken() });
-});
+
+router.get('/',  chatController.getChatPage);
+router.get('/messages/:userId',  chatController.getMessagesWithUser);
+router.post('/send',  chatController.sendMessage);
+router.post('/mark-read',  chatController.markAsRead);
+router.get('/unread-count' , chatController.getUnreadCount);
 
 module.exports = router;

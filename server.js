@@ -14,7 +14,11 @@ const path = require('path');
 const multer = require('multer');
 const uploadMedia = require('./utils/uploadMedia');
 const { isAdmin, getAdminDashboard, getAllUsers, getEditUser, updateUser, deleteUser } = require('./controllers/userController');
-
+const User = require('./models/User');
+const Message = require('./models/Message');
+const chatController = require('./controllers/chatController');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { createClient } = require('redis');
 require('./config/passport');
 
 const app = express();
@@ -39,7 +43,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       imgSrc: ["'self'", "https://res.cloudinary.com", "data:"],
       mediaSrc: ["'self'", "https://res.cloudinary.com"],
-      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"] // Thêm connectSrc cho WebSocket
+      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"], // Thêm connectSrc cho WebSocket
     }
   }
 }));
@@ -185,16 +189,69 @@ app.use(rateLimit({
   max: 1000
 }));
 
-// Socket.IO
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-  const session = socket.request.session;
-  if (!session.user || !session.user._id) {
-    console.log('Socket.IO: No user session found for socket', socket.id);
-    socket.disconnect(true);
-    return;
+//Chat
+app.use(async (req, res, next) => {
+  try {
+    res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
+  } catch (err) {
+    res.locals.csrfToken = '';
   }
 
+  const user = req.user || req.session.user || null;
+  res.locals.currentUser = user;
+  res.locals.user = user; // Đảm bảo tương thích nếu view dùng `user`
+  res.locals.friendId = null;
+  res.locals.unreadMap = {};
+
+  if (user && user._id) {
+    console.log('[Session] User ID:', user._id);
+    try {
+      const fullUser = await User.findById(user._id)
+        .populate('friends', 'username avatar')
+        .lean();
+
+      res.locals.friends = fullUser?.friends || [];
+
+      const unreadCounts = await Message.aggregate([
+        {
+          $match: {
+            receiver: new mongoose.Types.ObjectId(user._id),
+            isRead: false
+          }
+        },
+        {
+          $group: {
+            _id: '$sender',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      unreadCounts.forEach(item => {
+        res.locals.unreadMap[item._id.toString()] = item.count;
+      });
+    } catch (err) {
+      console.error('Error fetching friends or unread messages:', err.message);
+    }
+  } else {
+    console.log('[Session] No user session found');
+  }
+
+  next();
+});
+
+
+// Redis adapter setup
+const pubClient = createClient({ url: process.env.REDIS_URL });
+const subClient = pubClient.duplicate();
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+  chatController.handleSocketConnection(io);
+});
+
+io.on('connection', (socket) => {
+  // logic bình luận
   socket.on('subscribe', (postId) => {
     if (mongoose.isValidObjectId(postId)) {
       socket.join(postId);
@@ -208,17 +265,21 @@ io.on('connection', (socket) => {
     socket.leave(postId);
     console.log(`Socket ${socket.id} unsubscribed from post ${postId}`);
   });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
 });
 
-// Hàm để phát bình luận mới
+
+
 function broadcastComment(postId, comment) {
   io.to(postId).emit('newComment', { postId, comment });
 }
 module.exports.broadcastComment = broadcastComment;
+
+// Gắn io vào request để sử dụng trong routes
+app.use((req, res, next) => {
+  req.app.set('io', io);
+  next();
+});
+
 
 // Routes
 app.get('/', (req, res) => {

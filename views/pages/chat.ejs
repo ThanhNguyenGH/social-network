@@ -1,0 +1,36 @@
+
+<div class="container mx-auto flex space-x-4 p-4" data-current-user-id="<%= currentUser ? currentUser._id : null %>">
+
+  <!-- Main Content: Friend List -->
+  <main class="flex-1 bg-white p-6 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">Chat</h2>
+    <div id="friend-list" class="space-y-2">
+      <% if (friends && friends.length > 0) { %>
+        <% friends.forEach(friend => { %>
+          <% const avatar = friend.avatar || '/images/default-avatar.png'; %>
+          <div class="friend-item flex items-center cursor-pointer hover:bg-gray-100 p-3 rounded"
+               data-id="<%= friend._id %>"
+               data-username="<%= friend.username %>"
+               data-avatar="<%= avatar %>">
+            <img src="<%= avatar %>" alt="Avatar" class="w-10 h-10 rounded-full mr-3">
+            <span class="flex-1 font-semibold"><%= friend.username %></span>
+            <% if (unreadMap && unreadMap[friend._id.toString()]) { %>
+              <span class="unread-badge bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                <%= unreadMap[friend._id.toString()] %>
+              </span>
+            <% } %>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p class="text-gray-500">Không có bạn bè nào để hiển thị.</p>
+      <% } %>
+    </div>
+  </main>
+<%- include('../partials/chat-modal') %>
+</div>
+ 
+<!-- Include Scripts -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/chat.js"></script>
+<script src="/js/sidebar-right.js"></script>
+<script src="/js/chat-modal.js"></script>
