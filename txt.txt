@@ -1,3 +1,28 @@
+files: [
+    {
+      url:      { type: String, required: true },
+      name:     { type: String },
+      mimeType: { type: String },
+      size:     { type: Number }
+    }
+  ],
+  
+
+  //
+   <!-- Add Story
+    <div class="mb-6">
+      <h2 class="text-lg font-bold mb-2">Câu chuyện</h2>
+      <div class="flex space-x-4 overflow-x-auto">
+        <div class="flex-shrink-0 w-24 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+          <button class="bg-blue-500 text-white px-2 py-1 rounded">Thêm câu chuyện</button>
+        </div>
+        <div class="flex-shrink-0 w-24 h-32 bg-gray-300 rounded-lg"></div>
+        <div class="flex-shrink-0 w-24 h-32 bg-gray-400 rounded-lg"></div>
+        <div class="flex-shrink-0 w-24 h-32 bg-gray-500 rounded-lg"></div>
+      </div>
+    </div> -->
+
+
 // Log session Redis
 app.use(async (req, res, next) => {
   if (req.session?.user) {

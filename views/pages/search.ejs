@@ -52,14 +52,19 @@
         <% posts.forEach(post=> { %>
           <div class="bg-white shadow rounded p-4">
             <div class="flex items-center mb-2">
-              <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" alt="Avatar"
-                class="w-10 h-10 rounded-full mr-2">
-              <span class="font-bold">
-                <%= post.author.username %>
-              </span>
-              <span class="ml-auto text-sm text-gray-400">
-                <%= new Date(post.createdAt).toLocaleString('vi-VN') %>
-              </span>
+              <% if (post.author) { %>
+                <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" alt="Avatar"
+                  class="w-10 h-10 rounded-full mr-2">
+                <span class="font-bold">
+                  <%= post.author.username %>
+                </span>
+                <% } else { %>
+                  <img src="/images/default-avatar.png" alt="Avatar" class="w-10 h-10 rounded-full mr-2">
+                  <span class="font-bold text-gray-400 italic">Tài khoản đã bị xóa</span>
+                  <% } %>
+                    <span class="ml-auto text-sm text-gray-400">
+                      <%= new Date(post.createdAt).toLocaleString('vi-VN') %>
+                    </span>
             </div>
             <p class="text-gray-800">
               <%= post.content %>

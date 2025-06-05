@@ -199,7 +199,7 @@ app.use(async (req, res, next) => {
 
   const user = req.user || req.session.user || null;
   res.locals.currentUser = user;
-  res.locals.user = user; // Đảm bảo tương thích nếu view dùng `user`
+  res.locals.user = user;
   res.locals.friendId = null;
   res.locals.unreadMap = {};
 

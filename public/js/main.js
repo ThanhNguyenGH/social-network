@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Xử lý thiếu thông tin user (do user bị xóa)
     const author = comment.author || {
       _id: 'unknown',
-      username: '[Người dùng đã xóa]',
+      username: '[Người dùng đã bị xóa]',
       avatar: '/images/default-avatar.png'
     };
 
@@ -404,11 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
     backToTopBtn.addEventListener('click', () => {
       window.scrollTo({
         top: 0,
-        behavior: 'smooth' // cuộn mượt mà
+        behavior: 'smooth'
       });
     });
 
-    // Tuỳ chọn: Hiện nút khi cuộn xuống
     window.addEventListener('scroll', () => {
       if (window.scrollY > 300) {
         backToTopBtn.style.display = 'inline';
@@ -417,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Ẩn nút lúc đầu nếu cần
     backToTopBtn.style.display = 'none';
   }
 });

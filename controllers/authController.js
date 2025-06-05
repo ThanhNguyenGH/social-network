@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
     console.error('Register error:', err);
     res.status(500).render('pages/error', {
       message: 'Đã xảy ra lỗi khi đăng ký.',
-       username: req.body.username,
+      username: req.body.username,
       email: req.body.email,
       csrfToken: req.csrfToken(),
       layout: 'layouts/main'
@@ -63,6 +63,7 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).render('pages/login', {
+        successMessage: null,
         errors: [{ msg: 'Email hoặc mật khẩu không đúng' }],
         email: req.body.email,
         csrfToken: req.csrfToken(),
@@ -71,6 +72,7 @@ exports.login = async (req, res) => {
     }
     if (!user.password || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).render('pages/login', {
+        successMessage: null,
         errors: [{ msg: 'Email hoặc mật khẩu không đúng' }],
         email: req.body.email,
         csrfToken: req.csrfToken(),

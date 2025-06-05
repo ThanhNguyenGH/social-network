@@ -140,37 +140,37 @@ const chatController = {
   },
 
   markAsRead: async (req, res) => {
-  try {
-    if (!req.session.user || !req.session.user._id) {
-      return res.status(401).json({ success: false, error: 'Vui lòng đăng nhập' });
-    }
-    const { messageIds } = req.body;
-    const userId = req.session.user._id;
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      console.error('Invalid userId:', userId);
-      return res.status(400).json({ success: false, error: 'ID người dùng không hợp lệ' });
-    }
-    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
-      return res.status(400).json({ success: false, error: 'Danh sách messageIds không hợp lệ' });
-    }
+    try {
+      if (!req.session.user || !req.session.user._id) {
+        return res.status(401).json({ success: false, error: 'Vui lòng đăng nhập' });
+      }
+      const { messageIds } = req.body;
+      const userId = req.session.user._id;
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        console.error('Invalid userId:', userId);
+        return res.status(400).json({ success: false, error: 'ID người dùng không hợp lệ' });
+      }
+      if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+        return res.status(400).json({ success: false, error: 'Danh sách messageIds không hợp lệ' });
+      }
 
-    await Message.updateMany(
-      { _id: { $in: messageIds }, receiver: new mongoose.Types.ObjectId(userId), isRead: false },
-      { isRead: true }
-    );
+      await Message.updateMany(
+        { _id: { $in: messageIds }, receiver: new mongoose.Types.ObjectId(userId), isRead: false },
+        { isRead: true }
+      );
 
-    // Xóa cache Redis liên quan
-    const redisKeys = await redisClient.keys(`chat:${userId}:*`);
-    if (redisKeys.length > 0) {
-      await redisClient.del(redisKeys);
+      // Xóa cache Redis liên quan
+      const redisKeys = await redisClient.keys(`chat:${userId}:*`);
+      if (redisKeys.length > 0) {
+        await redisClient.del(redisKeys);
+      }
+
+      res.json({ success: true, message: 'Đã đánh dấu tin nhắn đã đọc' });
+    } catch (error) {
+      console.error('Error marking messages as read:', error.stack);
+      res.status(500).json({ success: false, error: 'Không thể đánh dấu tin nhắn đã đọc' });
     }
-
-    res.json({ success: true, message: 'Đã đánh dấu tin nhắn đã đọc' });
-  } catch (error) {
-    console.error('Error marking messages as read:', error.stack);
-    res.status(500).json({ success: false, error: 'Không thể đánh dấu tin nhắn đã đọc' });
-  }
-},
+  },
 
   getUnreadCount: async (req, res) => {
     try {
@@ -231,12 +231,15 @@ const chatController = {
       socket.on('send_message', async (data) => {
         try {
           const { receiverId, content, senderId } = data;
+          console.log('Received send_message:', { senderId, receiverId, content }); // Debug
+
           if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(receiverId)) {
             console.error('Invalid senderId or receiverId:', { senderId, receiverId });
             socket.emit('message_error', { success: false, error: 'ID không hợp lệ' });
             return;
           }
           if (!content || content.trim() === '') {
+            console.error('Empty message content:', content);
             socket.emit('message_error', { success: false, error: 'Nội dung tin nhắn không được để trống' });
             return;
           }
@@ -244,42 +247,83 @@ const chatController = {
           const message = new Message({
             sender: new mongoose.Types.ObjectId(senderId),
             receiver: new mongoose.Types.ObjectId(receiverId),
-            content: content.trim()
+            content: content.trim(),
+            createdAt: new Date()
           });
+
+          // Lưu tin nhắn và kiểm tra kết quả
           await message.save();
+          console.log(`Message saved to MongoDB: ${message._id}`); // Debug
           await message.populate('sender', 'username avatar');
           await message.populate('receiver', 'username avatar');
 
-          const redisKey = `chat:${[senderId, receiverId].sort().join(':')}`;
-          await redisClient.del(redisKey);
-
           io.to(`user_${receiverId}`).emit('private_message', { message, from: senderId });
           socket.emit('message_sent', { success: true, message });
+           console.log(`Message sent from ${senderId} to ${receiverId}`);
 
-          console.log(`Message sent from ${senderId} to ${receiverId}`);
+          try {
+            const redisKey = `chat:${[senderId, receiverId].sort().join(':')}`;
+            await redisClient.del(redisKey);
+          } catch (err) {
+            console.error('Redis cache clear failed:', err);
+          }
         } catch (error) {
-          console.error('Error sending message via socket:', error.stack);
+          console.error('Error saving message to MongoDB:', error.stack);
           socket.emit('message_error', { success: false, error: 'Không thể gửi tin nhắn' });
         }
       });
 
       socket.on('mark_read', async (data) => {
   try {
-    const { senderId, receiverId } = data;
+    const { senderId, receiverId, messageIds } = data;
     if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(receiverId)) {
       console.error('Invalid senderId or receiverId:', { senderId, receiverId });
       return;
     }
 
-    const updatedMessages = await Message.updateMany(
-      { sender: new mongoose.Types.ObjectId(senderId), receiver: new mongoose.Types.ObjectId(receiverId), isRead: false },
-      { isRead: true }
-    );
+    // Nếu messageIds không được gửi, truy vấn tất cả tin nhắn chưa đọc
+    let validMessageIds = messageIds || [];
+    if (!messageIds || messageIds.length === 0) {
+      const messages = await Message.find(
+        {
+          sender: new mongoose.Types.ObjectId(senderId),
+          receiver: new mongoose.Types.ObjectId(receiverId),
+          isRead: false
+        },
+        '_id'
+      );
+      validMessageIds = messages.map(msg => msg._id.toString());
+    }
 
-    // Gửi sự kiện messages_read đến cả sender và receiver
-    io.to(`user_${senderId}`).emit('messages_read', { readBy: receiverId, senderId });
-    io.to(`user_${receiverId}`).emit('messages_read', { readBy: receiverId, senderId });
-    console.log(`Messages marked as read by ${receiverId} from ${senderId}`);
+    if (validMessageIds.length > 0) {
+      await Message.updateMany(
+        {
+          _id: { $in: validMessageIds },
+          receiver: new mongoose.Types.ObjectId(receiverId),
+          isRead: false
+        },
+        { isRead: true }
+      );
+
+      // Gửi sự kiện messages_read tới cả sender và receiver
+      io.to(`user_${senderId}`).emit('messages_read', {
+        readBy: receiverId,
+        senderId,
+        messageIds: validMessageIds
+      });
+      io.to(`user_${receiverId}`).emit('messages_read', {
+        readBy: receiverId,
+        senderId,
+        messageIds: validMessageIds
+      });
+      console.log(`Messages marked as read by ${receiverId} from ${senderId}: ${validMessageIds}`);
+    }
+
+    // Xóa cache Redis liên quan
+    const redisKeys = await redisClient.keys(`chat:${receiverId}:*`);
+    if (redisKeys.length > 0) {
+      await redisClient.del(redisKeys);
+    }
   } catch (error) {
     console.error('Error marking messages as read:', error.stack);
   }

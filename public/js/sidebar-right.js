@@ -5,30 +5,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const minimizedName = document.getElementById('minimizedName');
   const minimizedUnread = document.getElementById('minimizedUnread');
   const sidebar = document.querySelector('.sidebar-right');
-  window.currentUserId = sidebar.dataset.currentUserId; // Lấy currentUserId từ data attribute
-  console.log('Current user ID set:', window.currentUserId); // Debug
+  window.currentUserId = sidebar.dataset.currentUserId;
+  console.log('Current user ID set:', window.currentUserId);
 
-  // Khởi tạo Socket.IO
   const socket = io();
 
-  // Hàm cập nhật số tin nhắn chưa đọc
-  const updateUnreadCount = async () => {
+  async function updateUnreadCount() {
     try {
       const response = await fetch('/chat/unread-count', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
       });
       const data = await response.json();
       if (data.success) {
-        minimizedUnread.textContent = data.unreadCount;
-        minimizedUnread.classList.toggle('hidden', data.unreadCount === 0);
+        const totalUnread = Object.values(data.unreadMap).reduce((sum, count) => sum + count, 0);
+        minimizedUnread.textContent = totalUnread;
+        minimizedUnread.classList.toggle('hidden', totalUnread === 0);
+
+        document.querySelectorAll('.friend-item').forEach(item => {
+          const userId = item.dataset.id;
+          const unreadBadge = item.querySelector('.unread-badge');
+          const count = data.unreadMap[userId] || 0;
+          if (unreadBadge) {
+            if (count > 0) {
+              unreadBadge.textContent = count;
+              unreadBadge.style.display = 'inline';
+            } else {
+              unreadBadge.textContent = '';
+              unreadBadge.style.display = 'none';
+            }
+          }
+        });
       }
     } catch (error) {
       console.error('Error updating unread count:', error);
     }
-  };
+  }
 
-  // Xử lý click vào friend item để mở chat modal
   friendList.addEventListener('click', async (event) => {
     const friendItem = event.target.closest('.friend-item');
     if (!friendItem) return;
@@ -37,45 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const username = friendItem.dataset.username;
     const avatar = friendItem.dataset.avatar;
 
-    // Cập nhật minimized chat info
     minimizedAvatar.src = avatar;
     minimizedName.textContent = username;
     minimizedChat.dataset.userId = userId;
     minimizedChat.classList.remove('hidden');
 
-    // Kích hoạt sự kiện mở chat modal
     const openChatEvent = new CustomEvent('openChatModal', {
       detail: { userId, username, avatar }
     });
     document.dispatchEvent(openChatEvent);
-
-    // Đánh dấu tin nhắn đã đọc
-    try {
-      const response = await fetch('/chat/messages/' + userId, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      if (data.success && data.messages.length > 0) {
-        const messageIds = data.messages
-          .filter(msg => msg.receiver._id === window.currentUserId && !msg.isRead)
-          .map(msg => msg._id);
-        if (messageIds.length > 0) {
-          await fetch('/chat/mark-read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messageIds })
-          });
-          socket.emit('mark_read', { senderId: userId });
-        }
-      }
-      updateUnreadCount();
-    } catch (error) {
-      console.error('Error handling friend click:', error);
-    }
   });
 
-  // Xử lý click vào minimized chat để mở lại modal
   minimizedChat.addEventListener('click', () => {
     const userId = minimizedChat.dataset.userId;
     const username = minimizedName.textContent;
@@ -87,13 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.dispatchEvent(openChatEvent);
   });
 
-  // Lắng nghe sự kiện tin nhắn mới từ Socket.IO
-  socket.on('new_message', ({ message }) => {
-    if (message.sender._id !== window.currentUserId) {
+  socket.on('private_message', ({ message }) => {
+    const chatModal = document.getElementById('chatModal');
+    if (
+      message.sender._id !== window.currentUserId &&
+      (!chatModal || chatModal.classList.contains('hidden') || message.sender._id !== chatModal.dataset.userId)
+    ) {
       updateUnreadCount();
     }
   });
 
-  // Cập nhật số tin nhắn chưa đọc khi tải trang
+  socket.on('messages_read', ({ readBy }) => {
+    if (readBy === window.currentUserId) {
+      updateUnreadCount();
+    }
+  });
+
   updateUnreadCount();
 });

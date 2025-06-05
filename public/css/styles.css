@@ -24,7 +24,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(59, 50, 50, 0.781);
 }
 
 .chat-header {
