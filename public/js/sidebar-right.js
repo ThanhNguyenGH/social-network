@@ -86,9 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   socket.on('messages_read', ({ readBy }) => {
-    if (readBy === window.currentUserId) {
-      updateUnreadCount();
-    }
+    updateUnreadCount();
   });
 
   updateUnreadCount();

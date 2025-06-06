@@ -274,60 +274,26 @@ const chatController = {
       });
 
       socket.on('mark_read', async (data) => {
-  try {
-    const { senderId, receiverId, messageIds } = data;
-    if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(receiverId)) {
-      console.error('Invalid senderId or receiverId:', { senderId, receiverId });
-      return;
-    }
+        try {
+          const { senderId, receiverId } = data;
+          if (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(receiverId)) {
+            console.error('Invalid senderId or receiverId:', { senderId, receiverId });
+            return;
+          }
 
-    // Nếu messageIds không được gửi, truy vấn tất cả tin nhắn chưa đọc
-    let validMessageIds = messageIds || [];
-    if (!messageIds || messageIds.length === 0) {
-      const messages = await Message.find(
-        {
-          sender: new mongoose.Types.ObjectId(senderId),
-          receiver: new mongoose.Types.ObjectId(receiverId),
-          isRead: false
-        },
-        '_id'
-      );
-      validMessageIds = messages.map(msg => msg._id.toString());
-    }
+          await Message.updateMany(
+            { sender: new mongoose.Types.ObjectId(senderId), receiver: new mongoose.Types.ObjectId(receiverId), isRead: false },
+            { isRead: true }
+          );
 
-    if (validMessageIds.length > 0) {
-      await Message.updateMany(
-        {
-          _id: { $in: validMessageIds },
-          receiver: new mongoose.Types.ObjectId(receiverId),
-          isRead: false
-        },
-        { isRead: true }
-      );
-
-      // Gửi sự kiện messages_read tới cả sender và receiver
-      io.to(`user_${senderId}`).emit('messages_read', {
-        readBy: receiverId,
-        senderId,
-        messageIds: validMessageIds
+          // Gửi sự kiện messages_read đến cả sender và receiver
+          io.to(`user_${senderId}`).emit('messages_read', { readBy: receiverId, senderId });
+          io.to(`user_${receiverId}`).emit('messages_read', { readBy: receiverId, senderId });
+          console.log(`Messages marked as read by ${receiverId} from ${senderId}`);
+        } catch (error) {
+          console.error('Error marking messages as read:', error.stack);
+        }
       });
-      io.to(`user_${receiverId}`).emit('messages_read', {
-        readBy: receiverId,
-        senderId,
-        messageIds: validMessageIds
-      });
-      console.log(`Messages marked as read by ${receiverId} from ${senderId}: ${validMessageIds}`);
-    }
-
-    // Xóa cache Redis liên quan
-    const redisKeys = await redisClient.keys(`chat:${receiverId}:*`);
-    if (redisKeys.length > 0) {
-      await redisClient.del(redisKeys);
-    }
-  } catch (error) {
-    console.error('Error marking messages as read:', error.stack);
-  }
-});
 
       socket.on('typing', (data) => {
         const { receiverId, isTyping } = data;

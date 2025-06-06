@@ -51,7 +51,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 // EJS và Layout
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -197,14 +196,33 @@ app.use(async (req, res, next) => {
     res.locals.csrfToken = '';
   }
 
-  const user = req.user || req.session.user || null;
-  res.locals.currentUser = user;
-  res.locals.user = user;
-  res.locals.friendId = null;
-  res.locals.unreadMap = {};
+  const sessionUser = req.user || req.session.user || null;
 
-  if (user && user._id) {
-    console.log('[Session] User ID:', user._id);
+  if (sessionUser && sessionUser._id) {
+    const user = await User.findById(sessionUser._id).lean();
+    
+    // Nếu user không còn trong DB => XÓA SESSION
+    if (!user) {
+      console.log(`[Security] User ${sessionUser._id} đã bị xóa khỏi DB. Xóa session.`);
+      req.session.destroy(err => {
+        if (err) {
+          console.error('[Session] Destroy error:', err);
+        }
+        // Nếu là request HTML: chuyển hướng về login
+        if (req.accepts('html')) {
+          return res.redirect('/auth/login');
+        }
+        // Nếu là API hoặc không phải HTML: trả lỗi
+        return res.status(401).json({ message: 'Your account has been deleted. Please login again.' });
+      });
+      return;
+    }
+
+    res.locals.currentUser = user;
+    res.locals.user = user;
+    res.locals.friendId = null;
+    res.locals.unreadMap = {};
+
     try {
       const fullUser = await User.findById(user._id)
         .populate('friends', 'username avatar')
@@ -233,12 +251,16 @@ app.use(async (req, res, next) => {
     } catch (err) {
       console.error('Error fetching friends or unread messages:', err.message);
     }
+
   } else {
+    res.locals.user = null;
+    res.locals.currentUser = null;
     console.log('[Session] No user session found');
   }
 
   next();
 });
+
 
 
 // Redis adapter setup
@@ -265,6 +287,40 @@ io.on('connection', (socket) => {
     socket.leave(postId);
     console.log(`Socket ${socket.id} unsubscribed from post ${postId}`);
   });
+  socket.on('user_typing', ({ userId, targetId, isTyping }) => {
+    io.to(targetId).emit('user_typing', { userId, isTyping });
+  });
+  socket.on('mark_read', ({ senderId, receiverId, messageIds }) => {
+    io.to(senderId).emit('messages_read', {
+      readerId: receiverId,
+      messageIds
+    });
+  });
+  // Đọc tin nhắn - cập nhật trạng thái đã đọc
+  socket.on('chat:read', async ({ senderId, receiverId }) => {
+    try {
+      const result = await Message.updateMany(
+        { sender: senderId, receiver: receiverId, isRead: false },
+        { $set: { isRead: true } }
+      );
+
+      console.log(`[Socket] ${receiverId} đã đọc tin nhắn của ${senderId} (${result.modifiedCount} tin)`);
+
+      // Gửi về cho người gửi (A) biết là B đã đọc
+      io.to(senderId).emit('messages_read', { readBy: receiverId });
+    } catch (err) {
+      console.error('[Socket] chat:read error:', err);
+    }
+  });
+
+  // Join room theo userId (để gửi tin nhắn trực tiếp)
+  const session = socket.request.session;
+  const userId = session?.user?._id;
+
+  if (userId) {
+    socket.join(userId); // Join theo ID người dùng
+    console.log(`[Socket.IO] User ${userId} joined their own room`);
+  }
 });
 
 
@@ -308,7 +364,6 @@ app.use(require('./routes/postRoutes'));
 app.use('/comments', require('./routes/commentRoutes'));
 app.use('/chat', require('./routes/chatRoutes'));
 app.use('/notifications', require('./routes/notificationRoutes'));
-
 
 // Error handling
 app.use(require('./middleware/errorHandler'));

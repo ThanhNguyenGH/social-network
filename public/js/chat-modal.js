@@ -7,6 +7,11 @@ if (currentUserId) {
   socket.emit('auth', currentUserId);
 }
 
+const sidebar = document.querySelector('.sidebar-right');
+if (sidebar) {
+  window.currentUserId = sidebar.dataset.currentUserId;
+}
+
 // Format thời gian tin nhắn
 function formatMessageTime(timestamp) {
   const date = new Date(timestamp);
@@ -79,21 +84,19 @@ document.addEventListener('openChatModal', async (event) => {
         // HTML cho tin nhắn
         div.innerHTML = `
   <div class="flex items-start ${isSender ? 'flex-row-reverse' : ''}">
-    ${
-      showAvatar
-        ? `<img src="${msg.sender.avatar || '/default-avatar.png'}" alt="Avatar" class="w-8 h-8 rounded-full ${isSender ? 'ml-2' : 'mr-2'}">`
-        : isSender
-        ? ''
-        : '<div class="w-8 h-8 mr-2"></div>' // Placeholder để căn chỉnh
-    }
+    ${showAvatar
+            ? `<img src="${msg.sender.avatar || '/default-avatar.png'}" alt="Avatar" class="w-8 h-8 rounded-full ${isSender ? 'ml-2' : 'mr-2'}">`
+            : isSender
+              ? ''
+              : '<div class="w-8 h-8 mr-2"></div>'
+          }
     <div class="inline-block px-3 py-2 rounded ${isSender ? 'bg-blue-200' : 'bg-gray-200'}">
       <p>${msg.content}</p>
       <p class="text-xs text-gray-500">${formatMessageTime(msg.createdAt)}</p>
-      ${
-        isSender && msg._id === getLastSeenMessageId(data.messages, currentUserId)
-          ? '<p class="text-xs text-gray-500 seen-indicator">Đã xem</p>'
-          : ''
-      }
+      ${isSender && msg._id === getLastSeenMessageId(data.messages, currentUserId)
+            ? '<p class="text-xs text-gray-500 seen-indicator">Đã xem</p>'
+            : ''
+          }
     </div>
   </div>
 `;
@@ -101,24 +104,27 @@ document.addEventListener('openChatModal', async (event) => {
       });
       chatBox.scrollTop = chatBox.scrollHeight;
     }
-
+    socket.emit('chat:read', {
+      senderId: friendId,
+      receiverId: currentUserId
+    });
     // Đánh dấu tin nhắn đã đọc
     const unreadIds = data.messages
       .filter(msg => msg && !msg.isRead && msg.receiver && msg.receiver._id === currentUserId)
       .map(msg => msg._id);
 
     if (unreadIds.length > 0) {
-  await fetch('/chat/mark-as-read', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-    },
-    body: JSON.stringify({ messageIds: unreadIds })
-  });
-  socket.emit('mark_read', { senderId: userId, receiverId: currentUserId });
-  updateUnreadCount(); // Cập nhật số tin nhắn chưa đọc
-}
+      await fetch('/chat/mark-as-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ messageIds: unreadIds })
+      });
+      socket.emit('mark_read', { senderId: userId, receiverId: currentUserId });
+      updateUnreadCount(); // Cập nhật số tin nhắn chưa đọc
+    }
   } catch (error) {
     console.error('Error loading messages:', error);
   }
@@ -163,7 +169,26 @@ document.getElementById('closeChatModal').addEventListener('click', () => {
   currentChatUserId = null;
   document.getElementById('typingIndicator').classList.add('hidden');
 });
+let typingTimeout;
 
+document.getElementById('chatInput').addEventListener('input', () => {
+  if (!currentChatUserId) return;
+
+  socket.emit('user_typing', {
+    userId: currentUserId,
+    targetId: currentChatUserId,
+    isTyping: true
+  });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit('user_typing', {
+      userId: currentUserId,
+      targetId: currentChatUserId,
+      isTyping: false
+    });
+  }, 4000);
+});
 // Gửi tin nhắn
 document.getElementById('chatForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -221,6 +246,15 @@ document.getElementById('chatForm').addEventListener('submit', e => {
 socket.on('private_message', ({ message, from }) => {
   const chatModal = document.getElementById('chatModal');
   const isCurrentChat = currentChatUserId === message.sender._id || currentChatUserId === message.receiver._id;
+  const openedUserId = chatModal.dataset.userId;
+  const senderId = message.sender._id;
+
+  if (!chatModal.classList.contains('hidden') && openedUserId === senderId) {
+    socket.emit('chat:read', {
+      senderId: senderId,
+      receiverId: window.currentUserId
+    });
+  }
 
   if (isCurrentChat && !chatModal.classList.contains('hidden')) {
     if (!message.content || !message.sender || !message.sender.username) {
@@ -282,11 +316,10 @@ socket.on('private_message', ({ message, from }) => {
       div.dataset.senderId = message.sender._id;
       div.innerHTML = `
         <div class="flex items-start">
-          ${
-            showAvatar
-              ? `<img src="${message.sender.avatar || '/images/default-avatar.png'}" alt="Avatar" class="w-8 h-8 rounded-full mr-2">`
-              : '<div class="w-8 h-8 mr-2"></div>'
-          }
+          ${showAvatar
+          ? `<img src="${message.sender.avatar || '/images/default-avatar.png'}" alt="Avatar" class="w-8 h-8 rounded-full mr-2">`
+          : '<div class="w-8 h-8 mr-2"></div>'
+        }
           <div class="inline-block px-3 py-2 rounded bg-gray-200">
             <p>${message.content}</p>
             <p class="text-xs text-gray-500">${formatMessageTime(message.createdAt)}</p>
@@ -332,26 +365,24 @@ socket.on('user_typing', ({ userId, isTyping }) => {
 });
 
 // Nhận sự kiện messages_read
-socket.on('messages_read', ({ readBy, senderId, messageIds }) => {
-  if (readBy === currentChatUserId && Array.isArray(messageIds) && messageIds.length > 0) {
-    const chatBox = document.getElementById('chatMessages');
+socket.on('messages_read', ({ readerId, messageIds }) => {
+  if (readerId !== currentChatUserId) return;
 
-    // Xóa tất cả chỉ báo "Đã xem" hiện có
-    chatBox.querySelectorAll('.seen-indicator').forEach(e => e.remove());
-
-    // Cập nhật tất cả tin nhắn trong messageIds
-    const messageElems = Array.from(chatBox.children);
-    messageElems.forEach(el => {
-      const msgId = el.dataset.id;
-      if (el.classList.contains('justify-end') && messageIds.includes(msgId)) {
-        const seen = document.createElement('p');
-        seen.className = 'seen-indicator text-xs text-gray-500';
-        seen.textContent = 'Đã xem';
-        el.querySelector('div').appendChild(seen);
+  const chatBox = document.getElementById('chatMessages');
+  messageIds.forEach(id => {
+    const msgDiv = chatBox.querySelector(`div[data-id="${id}"]`);
+    if (msgDiv) {
+      const seenIndicator = msgDiv.querySelector('.seen-indicator');
+      if (!seenIndicator) {
+        const seenTag = document.createElement('p');
+        seenTag.className = 'text-xs text-gray-500 seen-indicator';
+        seenTag.textContent = 'Đã xem';
+        msgDiv.querySelector('div.inline-block').appendChild(seenTag);
       }
-    });
-  }
+    }
+  });
 });
+
 
 async function updateUnreadCount() {
   try {

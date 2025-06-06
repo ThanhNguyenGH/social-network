@@ -3,6 +3,7 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const mongoose = require('mongoose');
 const cloudinary = require('../config/cloudinary');
+const redisClient = require('../config/redis');
 const fs = require('fs').promises;
 
 // Xem profile người dùng
@@ -629,6 +630,19 @@ exports.deleteUser = async (req, res, next) => {
 
     // Xóa người dùng
     await User.findByIdAndDelete(userId);
+
+    // Tìm và xóa session Redis của user này
+    const keys = await redisClient.keys('sess:*');
+    for (const key of keys) {
+      const sessionStr = await redisClient.get(key);
+      if (sessionStr) {
+        const sessionObj = JSON.parse(sessionStr);
+        if (sessionObj?.user?._id === userId) {
+          await redisClient.del(key);
+          console.log(`[Redis] Deleted session for user ${userId}: ${key}`);
+        }
+      }
+    }
 
     console.log('deleteUser - Deleted user and related data:', userId);
     res.redirect('/admin/users');
