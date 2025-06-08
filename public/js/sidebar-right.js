@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const minimizedChat = document.getElementById('minimizedChat');
   const minimizedAvatar = document.getElementById('minimizedAvatar');
   const minimizedName = document.getElementById('minimizedName');
-  const minimizedUnread = document.getElementById('minimizedUnread');
+  // const minimizedUnread = document.getElementById('minimizedUnread');
   const sidebar = document.querySelector('.sidebar-right');
   window.currentUserId = sidebar.dataset.currentUserId;
   console.log('Current user ID set:', window.currentUserId);
@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await response.json();
       if (data.success) {
-        const totalUnread = Object.values(data.unreadMap).reduce((sum, count) => sum + count, 0);
-        minimizedUnread.textContent = totalUnread;
-        minimizedUnread.classList.toggle('hidden', totalUnread === 0);
+        // const totalUnread = Object.values(data.unreadMap).reduce((sum, count) => sum + count, 0);
+        //  minimizedUnread.textContent = totalUnread;
+        //  minimizedUnread.classList.toggle('hidden', totalUnread === 0);
 
         document.querySelectorAll('.friend-item').forEach(item => {
           const userId = item.dataset.id;

@@ -11,6 +11,7 @@
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/mongoose": "^5.11.97",
+    "aws-sdk": "^2.1692.0",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.6.0",
     "connect-redis": "^8.0.3",

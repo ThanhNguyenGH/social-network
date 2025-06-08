@@ -1,22 +1,15 @@
 const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-  destination: './uploads/',
-  filename: (req, file, cb) => {
-    cb(null, `post_${Date.now()}_${file.originalname}`);
-  }
-});
+const s3 = require('../config/backblaze');
 
 const uploadFiles = multer({
-  storage,
+  storage: multer.memoryStorage(), // Lưu file vào bộ nhớ tạm thời trước khi upload lên B2
   limits: {
-    fileSize: 100 * 1024 * 1024, // 50MB/file
-    files: 10                   // Cho phép nhiều file
+    fileSize: 100 * 1024 * 1024, // 100MB/file
+    files: 10 // Cho phép tối đa 10 file
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|mp4|mov|mp3|wav|pdf|docx|xlsx|zip|rar/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const allowedTypes = /pdf|docx|xlsx|zip|rar/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname && mimetype) {
       return cb(null, true);

@@ -41,9 +41,16 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "https://res.cloudinary.com", "data:"],
-      mediaSrc: ["'self'", "https://res.cloudinary.com"],
-      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"], // Thêm connectSrc cho WebSocket
+      imgSrc: [
+        "'self'",
+        "https://res.cloudinary.com",
+        "https://social-network-files.s3.us-west-004.backblazeb2.com",
+        "data:"
+      ],
+      mediaSrc: ["'self'", "https://res.cloudinary.com",
+        "https://social-network-files.s3.us-west-004.backblazeb2.com"
+      ],
+      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"]
     }
   }
 }));
@@ -200,7 +207,7 @@ app.use(async (req, res, next) => {
 
   if (sessionUser && sessionUser._id) {
     const user = await User.findById(sessionUser._id).lean();
-    
+
     // Nếu user không còn trong DB => XÓA SESSION
     if (!user) {
       console.log(`[Security] User ${sessionUser._id} đã bị xóa khỏi DB. Xóa session.`);
@@ -299,15 +306,32 @@ io.on('connection', (socket) => {
   // Đọc tin nhắn - cập nhật trạng thái đã đọc
   socket.on('chat:read', async ({ senderId, receiverId }) => {
     try {
+      // Tìm các tin nhắn chưa đọc
+      const unreadMessages = await Message.find({
+        sender: senderId,
+        receiver: receiverId,
+        isRead: false
+      }).select('_id');
+
+      const messageIds = unreadMessages.map(msg => msg._id.toString());
+
+      if (messageIds.length === 0) return; // Không cần gửi gì nếu không có tin chưa đọc
+
+      // Cập nhật trạng thái đã đọc
       const result = await Message.updateMany(
-        { sender: senderId, receiver: receiverId, isRead: false },
+        { _id: { $in: messageIds } },
         { $set: { isRead: true } }
       );
 
-      console.log(`[Socket] ${receiverId} đã đọc tin nhắn của ${senderId} (${result.modifiedCount} tin)`);
+      console.log(`[Socket] ${receiverId} đã đọc ${result.modifiedCount} tin nhắn của ${senderId}`);
 
-      // Gửi về cho người gửi (A) biết là B đã đọc
-      io.to(senderId).emit('messages_read', { readBy: receiverId });
+      // Gửi về client của người gửi (senderId) biết rằng những tin này đã được đọc
+      io.to(senderId).emit('messages_read', {
+        readBy: receiverId,
+        senderId,
+        messageIds
+      });
+
     } catch (err) {
       console.error('[Socket] chat:read error:', err);
     }
@@ -332,7 +356,7 @@ module.exports.broadcastComment = broadcastComment;
 
 // Gắn io vào request để sử dụng trong routes
 app.use((req, res, next) => {
-  req.app.set('io', io);
+  req.io = app.get('io');
   next();
 });
 

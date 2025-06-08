@@ -51,6 +51,7 @@ exports.login = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).render('pages/login', {
+      successMessage: null,
       errors: errors.array(),
       email: req.body.email,
       csrfToken: req.csrfToken(),

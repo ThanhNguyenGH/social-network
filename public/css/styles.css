@@ -20,35 +20,186 @@
   min-width: 0;
 }
 
+/* Chat Modal */
 .chat-modal {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(59, 50, 50, 0.781);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 90%;
+    max-width: 600px;
+    min-width: 300px;
+    max-height: 80vh;
+    min-height: 200px;
+    overflow: hidden;
+    background: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 20px rgba(59, 50, 50, 0.781);
+    z-index: 1000;
+    resize: both;
 }
 
-.chat-header {
-  user-select: none;
+/* Draggable Handle (for moving modal) */
+.chat-modal-header {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 0.5rem 1rem;
+    cursor: move;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.chat-messages::-webkit-scrollbar {
-  width: 8px;
+/* Chat Messages */
+#chatMessages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #f8fafc;
+    scroll-behavior: smooth;
 }
 
-.chat-messages::-webkit-scrollbar-thumb {
-  background-color: rgba(248, 247, 247, 0.945);
-  border-radius: 4px;
+#chatMessages::-webkit-scrollbar {
+    width: 6px;
 }
 
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
+#chatMessages::-webkit-scrollbar-track {
+    background: #f1f5f9;
 }
 
-.animate-pulse {
-  animation: pulse 1.5s infinite;
+#chatMessages::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+#chatMessages img, #chatMessages video {
+    max-width: 200px;
+}
+
+#chatMessages a {
+    word-break: break-all;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border-radius: 1rem;
+    margin: 0.5rem 0;
+    max-width: 100px;
+}
+
+/* Drag Drop Area */
+.drag-drop-area {
+    position: absolute;
+    top: 4rem;
+    left: 0;
+    right: 0;
+    bottom: 4rem;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+}
+
+.drag-drop-area:hover, .drag-drop-area.drag-active {
+    background: #e6f0fa;
+    border-color: #3b82f6;
+}
+
+/* Chat Form */
+.chat-form {
+    background: #ffffff;
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Buttons */
+#chooseMediaBtn, #chooseFilesBtn {
+    background: #3b82f6;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+#chooseMediaBtn:hover, #chooseFilesBtn:hover {
+    background: #1d4ed8;
+}
+
+/* Selected Files */
+#selectedFiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing {
+    0%, 60%, 100% { opacity: 1; }
+    30% { opacity: 0.4; }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+/* Show Toast */
+.toast-center {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  opacity: 0;
+  background-color: #1e40af; /* blue-800 */
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.toast-center.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chat-modal {
+        width: 95%;
+        max-height: 90vh;
+        min-width: 250px;
+    }
 }
