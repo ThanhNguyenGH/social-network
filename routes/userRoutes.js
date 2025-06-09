@@ -19,5 +19,11 @@ router.get('/search', userController.searchUsers);
 router.get('/friends', userController.getFriends);
 router.post('/friend/:id', csrfProtection, userController.toggleFriend);
 
+router.get('/settings', csrfProtection, (req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+}, userController.getSettings);
+
+router.post('/settings/change-password', csrfProtection, userController.changePassword);
 
 module.exports = router;

@@ -6,20 +6,6 @@ const s3 = require('../config/backblaze');
 const cloudinary = require('../config/cloudinary');
 const path = require('path');
 
-// Middleware để xử lý cả media và file upload
-const uploadMiddleware = (req, res, next) => {
-  uploadMedia(req, res, (err) => {
-    if (err instanceof multer.MulterError || err) {
-      return res.status(400).json({ success: false, error: err.message || 'Lỗi upload media' });
-    }
-    uploadFiles(req, res, (err) => {
-      if (err instanceof multer.MulterError || err) {
-        return res.status(400).json({ success: false, error: err.message || 'Lỗi upload file' });
-      }
-      next();
-    });
-  });
-};
 
 const chatController = {
   getChatPage: async (req, res) => {
@@ -112,7 +98,7 @@ const chatController = {
         .populate('sender', 'username avatar')
         .populate('receiver', 'username avatar')
         .sort({ createdAt: 1 })
-        .limit(50);
+        .limit(4444);// !!! Chỉ dùng tạm. Nên thay bằng kỹ thuật infinite scroll để tránh tải quá nhiều tin nhắn cùng lúc.
 
       await redisClient.setEx(redisKey, 60, JSON.stringify(messages));
 

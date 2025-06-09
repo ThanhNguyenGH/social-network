@@ -1,26 +1,135 @@
-<header class="bg-white text-black p-4 shadow">
-  <nav class="container mx-auto flex justify-between items-center gap-4">
-    <!-- Logo -->
-    <a href="/" class="text-xl font-bold text-blue-600 whitespace-nowrap">Social Network</a>
+<!DOCTYPE html>
+<html lang="vi">
 
-    <!-- Thanh tìm kiếm -->
-    <div class="flex-1 max-w-md">
-      <form action="/users/search" method="GET">
-        <input 
-          type="text" 
-          name="query" 
-          placeholder="Tìm kiếm..." 
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        >
-      </form>
-    </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Flowbite CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet">
+</head>
 
-    <!-- Nút Logout -->
-    <div class="whitespace-nowrap">
-      <% if (user) { %>
-        <a href="/auth/logout" class="mx-2 text-blue-600 hover:underline">Logout</a>
-      <% } %>
-    </div>
-  </nav>
-</header>
+<body>
+  <header>
+    <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 shadow border border-gray-200">
+      <div class="container mx-auto flex flex-wrap items-top justify-between">
+        <!-- Logo -->
+        <div class="flex items-start">
+          <a href="/" class="flex items-start">
+            <span class="self-center text-xl font-semibold whitespace-nowrap text-blue-600">Social Network</span>
+          </a>
+        </div>
+        <!-- Thanh tìm kiếm -->
+        <div class="flex-1 max-w-md mx-4 order-2 lg:order-1">
+          <form action="/users/search" method="GET" class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <input type="text" name="query" placeholder="Tìm kiếm..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required>
+          </form>
+        </div>
+
+        <!-- Nút toggle và menu responsive -->
+        <div class="flex items-start order-3">
+          <!-- Nút toggle cho menu responsive -->
+          <button data-collapse-toggle="mobile-menu" type="button"
+            class="inline-flex items-start p-2 ml-1 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            aria-controls="mobile-menu" aria-expanded="false">
+            <span class="sr-only">Open main menu</span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd"
+                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </button>
+
+          <!-- Menu responsive -->
+          <div class="hidden w-full mt-2" id="mobile-menu">
+
+            <ul class="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-8 lg:mt-0">
+              <li>
+                <a href="/home"
+                  class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+                  <!-- Home icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" />
+                  </svg>
+                  <span>Trang chủ</span>
+                </a>
+              </li>
+
+              <li>
+                <a href="/users/search"
+                  class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+                  <!-- Users icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  <span>Mọi người</span>
+                </a>
+              </li>
+
+              <li>
+                <a href="/users/profile/<%= user?._id || '' %>"
+                  class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+                  <!-- User icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5z" />
+                    <path d="M3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2" />
+                  </svg>
+                  <span>Hồ sơ</span>
+                </a>
+              </li>
+
+              <li>
+                <a href="/users/settings"
+                  class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+                  <!-- Settings icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                  <span>Cài đăt</span>
+                </a>
+              </li>
+              <% if (user) { %>
+                <li>
+                  <a href="/auth/logout"
+                    class="block py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 lg:hover:bg-transparent lg:border-0 lg:hover:text-blue-500 lg:p-0 flex items-center">
+                    <!-- Logout icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Đăng xuất
+                  </a>
+                </li>
+                <% } %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+</body>
+<script src="/js/flowbite.min.js"></script>
+
+</html>

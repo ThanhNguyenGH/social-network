@@ -4,7 +4,7 @@ const commentSchema = new mongoose.Schema({
   content: { type: String, required: true, maxLength: 500 },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
-  parentComment: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
+  // parentComment: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null }, //chức năng trả lời comment
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date }
 });

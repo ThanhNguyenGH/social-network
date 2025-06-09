@@ -19,7 +19,36 @@
   overflow-y: auto;
   min-width: 0;
 }
+/* Comment */
+.comment-section .comment-content {
+    margin-left: 40px;
+  }
+  .comment-section .comment-list > div {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+.comment-section .comment-content {
+      display: block;
+      margin-top: 8px; 
+      margin-bottom: 4px; 
+      margin-left: 40px; 
+    }
+    .comment-section .comment-time {
+      display: block;
+      margin-left: 40px;
+      margin-top: 4px;
+    }
+    .comment-section .edit-label {
+      margin-left: 8px; 
+    }
+    .comment-section .comment-list > div {
+      border-bottom: 1px solid #e5e7eb; 
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
 
+    
 /* Chat Modal */
 .chat-modal {
     display: flex;
@@ -28,9 +57,9 @@
     bottom: 20px;
     right: 20px;
     width: 90%;
-    max-width: 600px;
-    min-width: 300px;
-    max-height: 80vh;
+    max-width: 1200px;
+    min-width: 400px;
+    max-height: 95vh;
     min-height: 200px;
     overflow: hidden;
     background: #ffffff;
@@ -175,7 +204,7 @@
   left: 50%;
   transform: translateX(-50%) translateY(-10px);
   opacity: 0;
-  background-color: #1e40af; /* blue-800 */
+  background-color: #1e40af;
   color: white;
   padding: 0.75rem 1.25rem;
   border-radius: 0.5rem;
@@ -200,6 +229,6 @@
     .chat-modal {
         width: 95%;
         max-height: 90vh;
-        min-width: 250px;
+        min-width: 400px;
     }
 }

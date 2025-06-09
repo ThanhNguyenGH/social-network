@@ -1,38 +1,67 @@
-<aside class="sidebar-left space-y-6">
-  <!-- Group: Thông tin người dùng -->
-  <div class="bg-white p-4 rounded shadow border border-gray-200">
-    <div class="flex items-center">
-      <a href="/users/profile/<%= user._id %>" class="flex items-center">
-        <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar" class="w-12 h-12 rounded-full mr-3">
-        <p class="font-bold text-lg">
-          <%= user ? user.username : 'username' %>
-        </p>
-      </a>
-    </div>
+<aside class="sidebar-left space-y-6 px-4 py-6 text-gray-800">
+
+  <!-- Thông tin người dùng -->
+  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+    <a href="/users/profile/<%= user._id %>" class="flex items-center gap-3">
+      <img src="<%= user.avatar || '/images/default-avatar.png' %>" alt="Avatar" class="w-12 h-12 rounded-full object-cover border border-gray-200">
+      <div>
+        <p class="font-semibold text-lg"><%= user?.username || 'username' %></p>
+      </div>
+    </a>
   </div>
 
-  <!-- Group: Menu điều hướng -->
-  <div class="bg-white p-4 rounded shadow border border-gray-200">
-    <h3 class="font-bold text-lg mb-4">Navigation</h3>
+  <!-- Menu điều hướng -->
+  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
     <nav>
-      <ul class="space-y-3">
-        <li><a href="/home" class="flex items-center hover:text-blue-500"><span class="mr-2">🏠</span> Home</a></li>
-        <li><a href="/users/search" class="flex items-center hover:text-blue-500"><span class="mr-2">👥</span> People</a></li>
-        <li><a href="/photos" class="flex items-center hover:text-blue-500"><span class="mr-2">📷</span> Photos</a></li>
-        <li><a href="/newsfeed" class="flex items-center hover:text-blue-500"><span class="mr-2">📰</span> News Feed</a></li>
-        <li><a href="/chat" class="flex items-center hover:text-blue-500"><span class="mr-2">📰</span> Chat</a></li>
-        <li><a href="/users/profile/<%= user ? user._id : '' %>" class="flex items-center hover:text-blue-500"><span class="mr-2">👤</span> Profile</a></li>
-        <li><a href="/settings" class="flex items-center hover:text-blue-500"><span class="mr-2">⚙️</span> Settings</a></li>
+      <ul class="space-y-2">
+
+        <li>
+          <a href="/home" class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+            <!-- Home icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z"/>
+            </svg>
+            <span>Trang chủ</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="/users/search" class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+            <!-- Users icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>Mọi người</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="/users/profile/<%= user?._id || '' %>" class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+            <!-- User icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5z" />
+              <path d="M3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2" />
+            </svg>
+            <span>Hồ sơ cá nhân</span>
+          </a>
+        </li>
+
+        <li>
+          <a href="/users/settings" class="flex items-center gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition">
+            <!-- Settings icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Cài đặt</span>
+          </a>
+        </li>
+
       </ul>
     </nav>
   </div>
 
-  <!-- Group: Lời mời -->
-  <div class="bg-white p-4 rounded shadow border border-gray-200">
-    <h3 class="font-bold text-lg mb-4">Invitations</h3>
-    <div>
-      <p class="text-sm text-gray-700">How to Build a Strong Company</p>
-      <button class="bg-blue-500 text-white px-3 py-1 rounded mt-3">Accept Invitation</button>
-    </div>
-  </div>
 </aside>

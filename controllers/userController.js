@@ -5,6 +5,121 @@ const mongoose = require('mongoose');
 const cloudinary = require('../config/cloudinary');
 const redisClient = require('../config/redis');
 const fs = require('fs').promises;
+const bcrypt = require('bcrypt');
+
+
+// Hiển thị trang cài đặt (settings) với form đổi mật khẩu
+exports.getSettings = (req, res) => {
+  console.log('getSettings - session.user:', req.session.user);
+  if (!req.session.user || !req.session.user._id) {
+    console.log('getSettings - No session user');
+    return res.redirect('/auth/login');
+  }
+  res.render('pages/settings', {
+    user: req.session.user,
+    errors: [],
+    success: null,
+    csrfToken: req.csrfToken(),
+    title: 'Cài đặt',
+    layout: null
+  });
+};
+
+// Xử lý yêu cầu đổi mật khẩu
+exports.changePassword = async (req, res) => {
+  try {
+    console.log('changePassword - session.user:', req.session.user);
+    if (!req.session.user || !req.session.user._id) {
+      console.log('changePassword - No session user');
+      return res.redirect('/auth/login');
+    }
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.session.user._id;
+    console.log('changePassword - userId:', userId, 'body:', req.body);
+
+    if (!mongoose.isValidObjectId(userId)) {
+      console.log('changePassword - Invalid userId');
+      return res.status(400).render('pages/error', {
+        message: `ID người dùng không hợp lệ: ${userId}`,
+        user: req.session.user,
+        layout: null
+      });
+    }
+
+    // Validate input
+    const errors = [];
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('changePassword - User not found');
+      return res.status(404).render('pages/error', {
+        message: `Không tìm thấy người dùng với ID: ${userId}`,
+        user: req.session.user,
+        layout: null
+      });
+    }
+
+    // Nếu người dùng chỉ sử dụng Google OAuth (không có mật khẩu)
+    if (!user.password && user.googleId) {
+      errors.push({ msg: 'Tài khoản này sử dụng đăng nhập Google. Không thể đổi mật khẩu.' });
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    if (user.password) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        errors.push({ msg: 'Mật khẩu hiện tại không đúng' });
+      }
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      errors.push({ msg: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+    if (newPassword !== confirmPassword) {
+      errors.push({ msg: 'Mật khẩu xác nhận không khớp' });
+    }
+
+    if (errors.length > 0) {
+      console.log('changePassword - Validation errors:', errors);
+      return res.status(400).render('pages/settings', {
+        user: req.session.user,
+        errors,
+        success: null,
+        csrfToken: req.csrfToken(), // Sử dụng req.csrfToken()
+        title: 'Cài đặt',
+        layout: null
+      });
+    }
+
+    // Mã hóa mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Cập nhật mật khẩu
+    user.password = hashedPassword;
+    await user.save();
+
+    console.log('changePassword - Password updated for user:', userId);
+    return res.render('pages/settings', {
+      user: req.session.user,
+      errors: [],
+      success: 'Đổi mật khẩu thành công!',
+      csrfToken: req.csrfToken(), // Sử dụng req.csrfToken()
+      title: 'Cài đặt',
+      layout: null
+    });
+  } catch (err) {
+    console.error('changePassword - Error:', err);
+    res.status(500).render('pages/settings', {
+      user: req.session.user,
+      errors: [{ msg: err.message || 'Đã xảy ra lỗi không mong muốn.' }],
+      success: null,
+      csrfToken: req.csrfToken(), // Sử dụng req.csrfToken()
+      title: 'Cài đặt',
+      layout: null
+    });
+  }
+};
 
 // Xem profile người dùng
 exports.getProfile = async (req, res, next) => {

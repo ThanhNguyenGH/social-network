@@ -6,36 +6,46 @@ files: [
       size:     { type: Number }
     }
   ],
-  //chatRoutes:
-  const express = require('express');
-const router = express.Router();
-const chatController = require('../controllers/chatController');
-const multer = require('multer');
-const { uploadMedia, uploadFiles } = require('../utils/uploadMedia2');
-const csrfProtection = require('csurf')({ cookie: false });
 
-// Middleware để xử lý cả media và file
-const uploadMiddleware = (req, res, next) => {
-  uploadMedia(req, res, (err) => {
-    if (err instanceof multer.MulterError || err) {
-      return res.status(400).json({ success: false, error: err.message || 'Lỗi upload media' });
+  /* Comment */
+.comment-section .comment-content {
+    margin-left: 40px;
+  }
+  .comment-section .comment-list > div {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+.comment-section .comment-content {
+      display: block;
+      margin-top: 8px; 
+      margin-bottom: 4px; 
+      margin-left: 40px; 
     }
-    uploadFiles(req, res, (err) => {
-      if (err instanceof multer.MulterError || err) {
-        return res.status(400).json({ success: false, error: err.message || 'Lỗi upload file' });
-      }
-      next();
-    });
-  });
-};
+    .comment-section .comment-time {
+      display: block;
+      margin-left: 40px;
+      margin-top: 4px;
+    }
+    .comment-section .edit-label {
+      margin-left: 8px; 
+    }
+    .comment-section .comment-list > div {
+      border-bottom: 1px solid #e5e7eb; 
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
 
-router.get('/', csrfProtection, chatController.getChatPage);
-router.get('/messages/:userId', csrfProtection, chatController.getMessagesWithUser);
-router.post('/send', uploadMiddleware, csrfProtection, chatController.sendMessage);
-router.get('/unread-count', csrfProtection, chatController.getUnreadCount);
-
-module.exports = router;
-***
+ // const messages = await Message.find({
+      //   $or: [
+      //     { sender: new mongoose.Types.ObjectId(userId), receiver: new mongoose.Types.ObjectId(otherUserId) },
+      //     { sender: new mongoose.Types.ObjectId(otherUserId), receiver: new mongoose.Types.ObjectId(userId) }
+      //   ]
+      // })
+      //   .populate('sender', 'username avatar')
+      //   .populate('receiver', 'username avatar')
+      //   .sort({ createdAt: 1 })
+      //   .limit(50);
   
   //chatController:
   const mongoose = require('mongoose');

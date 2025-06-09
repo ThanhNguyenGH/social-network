@@ -19,7 +19,9 @@ const Message = require('./models/Message');
 const chatController = require('./controllers/chatController');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { createClient } = require('redis');
+require('dotenv').config();
 require('./config/passport');
+
 
 const app = express();
 const server = http.createServer(app);

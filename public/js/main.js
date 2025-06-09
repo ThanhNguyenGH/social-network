@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function createCommentElement(comment) {
     const commentDiv = document.createElement('div');
     commentDiv.id = `comment-${comment._id}`;
-    commentDiv.className = 'mb-2';
+    commentDiv.className = 'mb-2 comment-section'; // Thêm class để áp dụng CSS
 
     // Xử lý thiếu thông tin user (do user bị xóa)
     const author = comment.author || {
@@ -104,16 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
       ` : ''}
     </div>
     <p class="text-gray-600 comment-content">${comment.content}</p>
-    ${comment.updatedAt && new Date(comment.updatedAt) > new Date(comment.createdAt) ? `
-      <span class="edit-label text-gray-400 text-sm ml-2">(Đã chỉnh sửa)</span>
-    ` : ''}
-    <p class="text-gray-400 text-sm">${createdAt.toLocaleString()}</p>
+    <div class="flex items-center">
+      <p class="text-gray-400 text-sm comment-time">${createdAt.toLocaleString()}</p>
+      ${comment.updatedAt && new Date(comment.updatedAt) > new Date(comment.createdAt) ? `
+        <span class="edit-label text-gray-400 text-sm">(Đã chỉnh sửa)</span>
+      ` : ''}
+    </div>
   `;
 
     if (isOwnComment) attachCommentActions(commentDiv, comment._id, canEdit);
     return commentDiv;
   }
-
 
   function updateCommentCount(postId, delta) {
     const commentCount = document.getElementById(`comment-count-${postId}`);
@@ -197,39 +198,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchComments(postId) {
-  try {
-    const response = await fetch(`/comments/${postId}`);
-    if (!response.ok) {
-      console.error(`HTTP error! Status: ${response.status}`);
-      throw new Error(`Không thể lấy dữ liệu từ server`);
-    }
+    try {
+      const response = await fetch(`/comments/${postId}`);
+      if (!response.ok) {
+        console.error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`Không thể lấy dữ liệu từ server`);
+      }
 
-    const data = await response.json();
-    const commentList = document.getElementById(`comment-list-${postId}`);
-    if (!commentList) {
-      console.warn(`Không tìm thấy phần tử comment-list-${postId}`);
-      return;
-    }
+      const data = await response.json();
+      const commentList = document.getElementById(`comment-list-${postId}`);
+      if (!commentList) {
+        console.warn(`Không tìm thấy phần tử comment-list-${postId}`);
+        return;
+      }
 
-    // Xóa nội dung cũ
-    commentList.innerHTML = '';
+      // Xóa nội dung cũ
+      commentList.innerHTML = '';
 
-    if (data.comments.length === 0) {
-      const emptyMessage = document.createElement('p');
-      emptyMessage.className = 'text-gray-500';
-      emptyMessage.textContent = 'Chưa có bình luận nào.';
-      commentList.appendChild(emptyMessage);
-    } else {
-      data.comments.forEach(comment => {
-        const commentElement = createCommentElement(comment);
-        commentList.appendChild(commentElement);
-      });
+      if (data.comments.length === 0) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.className = 'text-gray-500';
+        emptyMessage.textContent = 'Chưa có bình luận nào.';
+        commentList.appendChild(emptyMessage);
+      } else {
+        data.comments.forEach(comment => {
+          const commentElement = createCommentElement(comment);
+          commentList.appendChild(commentElement);
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải bình luận:', error);
+      alert('Không thể tải bình luận. Vui lòng thử lại sau.');
     }
-  } catch (error) {
-    console.error('Lỗi khi tải bình luận:', error);
-    alert('Không thể tải bình luận. Vui lòng thử lại sau.');
   }
-}
 
 
   function attachCommentToggleEvent(button) {
@@ -419,3 +420,12 @@ document.addEventListener('DOMContentLoaded', () => {
     backToTopBtn.style.display = 'none';
   }
 });
+
+document.querySelectorAll('.see-more').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const bioText = e.target.previousElementSibling;
+        bioText.classList.toggle('expanded');
+        e.target.textContent = bioText.classList.contains('expanded') ? 'See less' : 'See more';
+      });
+    });

@@ -7,71 +7,83 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
-<body>
-  <div class="container mx-auto p-4">
-    <h2 class="text-2xl font-semibold mb-4">Chỉnh sửa bài đăng</h2>
+<body class="bg-gray-100 min-h-screen">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="userId" value="<%= user._id %>">
 
-    <% if (errors && errors.length > 0) { %>
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-        <ul>
-          <% errors.forEach(error => { %>
-            <li><%= error.msg %></li>
-          <% }) %>
-        </ul>
-      </div>
-    <% } %>
+  <!-- Div tổng bọc tất cả nội dung để dễ định vị và căn giữa -->
+  <div class="wrapper max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Chỉnh sửa bài đăng</h2>
 
-    <form action="/post/<%= post._id %>/edit" method="POST" enctype="multipart/form-data" class="max-w-lg">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="mb-4">
-        <label for="content" class="block text-gray-700 font-semibold mb-2">Nội dung</label>
-        <textarea
-          id="content"
-          name="content"
-          class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required><%= post.content %></textarea>
-      </div>
-      <div class="mb-4">
-        <label for="media" class="block text-gray-700 font-semibold mb-2">Media (nếu muốn thay đổi)</label>
-        <input
-          type="file"
-          id="media"
-          name="media"
-          accept="image/jpeg,image/png,video/mp4,video/mov,audio/mp3,audio/wav"
-          class="w-full"
-        >
-        <% if (post.media && post.media.url) { %>
-          <p class="mt-2">Media hiện tại:</p>
-          <% if (post.media.type === 'image') { %>
-            <img src="<%= post.media.url %>" alt="Current Media" class="mt-2 max-w-full h-auto rounded">
-          <% } else if (post.media.type === 'video') { %>
-            <video controls class="mt-2 max-w-full h-auto rounded">
-              <source src="<%= post.media.url %>" type="video/mp4">
-              Trình duyệt của bạn không hỗ trợ video.
-            </video>
-          <% } else if (post.media.type === 'audio') { %>
-            <audio controls class="mt-2 w-full">
-              <source src="<%= post.media.url %>" type="audio/mpeg">
-              Trình duyệt của bạn không hỗ trợ âm thanh.
-            </audio>
+      <% if (errors && errors.length > 0) { %>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <ul class="list-disc list-inside">
+            <% errors.forEach(error => { %>
+              <li><%= error.msg %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form action="/post/<%= post._id %>/edit" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div>
+          <label for="content" class="block text-gray-700 font-medium mb-1">Nội dung</label>
+          <textarea
+            id="content"
+            name="content"
+            class="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="5"
+            required><%= post.content %></textarea>
+        </div>
+
+        <div>
+          <label for="media" class="block text-gray-700 font-medium mb-1">Media (nếu muốn thay đổi)</label>
+          <input
+            type="file"
+            id="media"
+            name="media"
+            accept="image/jpeg,image/png,video/mp4,video/mov,audio/mp3,audio/wav"
+            class="w-full"
+          >
+          <% if (post.media && post.media.url) { %>
+            <p class="mt-3 text-sm text-gray-600">Media hiện tại:</p>
+            <div class="mt-2">
+              <% if (post.media.type === 'image') { %>
+                <img src="<%= post.media.url %>" alt="Current Media" class="max-w-full h-auto rounded shadow">
+              <% } else if (post.media.type === 'video') { %>
+                <video controls class="max-w-full h-auto rounded shadow">
+                  <source src="<%= post.media.url %>" type="video/mp4">
+                  Trình duyệt của bạn không hỗ trợ video.
+                </video>
+              <% } else if (post.media.type === 'audio') { %>
+                <audio controls class="w-full">
+                  <source src="<%= post.media.url %>" type="audio/mpeg">
+                  Trình duyệt của bạn không hỗ trợ âm thanh.
+                </audio>
+              <% } %>
+            </div>
           <% } %>
-        <% } %>
-      </div>
-      <div class="flex gap-4">
-        <button
-          type="submit"
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          <i class="fas fa-save"></i> Lưu
-        </button>
-        <a
-          href="/home"
-          class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-        >
-          <i class="fas fa-arrow-left"></i> Quay lại
-        </a>
-      </div>
-    </form>
+        </div>
+
+        <div class="flex gap-4">
+          <button
+            type="submit"
+            class="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+          >
+            <i class="fas fa-save mr-2"></i> Lưu
+          </button>
+          <a
+            href="/home"
+            class="flex items-center bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
+          >
+            <i class="fas fa-arrow-left mr-2"></i> Quay lại
+          </a>
+        </div>
+      </form>
+    </div>
   </div>
 </body>
 </html>

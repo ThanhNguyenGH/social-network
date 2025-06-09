@@ -1,10 +1,5 @@
 <!-- sidebar-right.ejs -->
 <aside class="sidebar-right w-64 bg-gray-50 p-4" data-current-user-id="<%= currentUser ? currentUser._id : null %>">
-  <div class="mb-6">
-    <h3 class="font-bold mb-2">Yêu cầu kết bạn</h3>
-    <!-- ... giữ nguyên phần yêu cầu kết bạn ... -->
-  </div>
-
   <div>
     <h3 class="font-bold mb-2">Danh sách bạn bè</h3>
     <ul class="space-y-2" id="friend-list">
@@ -36,12 +31,10 @@
   <div class="flex items-center">
     <img id="minimizedAvatar" src="/images/default-avatar.png" alt="" class="w-6 h-6 rounded-full mr-2">
     <span id="minimizedName">Chat</span>
-    <!-- <span id="minimizedUnread" class="ml-2 bg-red-500 text-xs rounded-full px-2 py-1 hidden animate-pulse">0</span> -->
   </div>
 </div>
 
 <%- include('../partials/chat-modal') %>
-
 
 <!-- Include Scripts -->
 <script src="/socket.io/socket.io.js"></script>
