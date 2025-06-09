@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Danh sách bạn bè</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-</head>
-
-<body class="bg-gray-100 text-gray-800">
+<div class="bg-gray-100 text-gray-800">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <input type="hidden" name="userId" value="<%= user._id %>">
   <div class="max-w-6xl mx-auto p-6">
@@ -56,7 +45,4 @@
         </div>
         <% } %>
   </div>
-
-</body>
-
-</html>
+</div>

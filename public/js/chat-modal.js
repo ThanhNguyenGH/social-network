@@ -725,6 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let offsetX = 0;
     let offsetY = 0;
 
+    // === PC: Bắt đầu kéo bằng chuột ===
     modalHeader.addEventListener('mousedown', (e) => {
       isDragging = true;
 
@@ -733,15 +734,51 @@ document.addEventListener('DOMContentLoaded', () => {
       offsetY = e.clientY - rect.top;
 
       chatModal.style.position = 'fixed';
+      chatModal.style.zIndex = '9999';
     });
 
+    // === Mobile: Bắt đầu kéo bằng cảm ứng ===
+    modalHeader.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+
+      const rect = chatModal.getBoundingClientRect();
+      offsetX = touch.clientX - rect.left;
+      offsetY = touch.clientY - rect.top;
+
+      chatModal.style.position = 'fixed';
+      chatModal.style.zIndex = '9999';
+    });
+
+    // === Di chuyển chuột ===
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
 
       e.preventDefault();
 
-      let newX = e.clientX - offsetX;
-      let newY = e.clientY - offsetY;
+      moveModal(e.clientX, e.clientY);
+    });
+
+    // === Di chuyển cảm ứng ===
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+
+      const touch = e.touches[0];
+      moveModal(touch.clientX, touch.clientY);
+    });
+
+    // === Dừng kéo chuột hoặc chạm ===
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    document.addEventListener('touchend', () => {
+      isDragging = false;
+    });
+
+    function moveModal(clientX, clientY) {
+      let newX = clientX - offsetX;
+      let newY = clientY - offsetY;
 
       const modalRect = chatModal.getBoundingClientRect();
       newX = Math.max(0, Math.min(newX, window.innerWidth - modalRect.width));
@@ -751,10 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
       chatModal.style.top = `${newY}px`;
       chatModal.style.right = 'auto';
       chatModal.style.bottom = 'auto';
-    });
-
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
+    }
   }
 });

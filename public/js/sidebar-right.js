@@ -154,3 +154,89 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchOnlineUsers();
   updateUnreadCount();
 });
+
+function listenSidebarToggle() {
+  const sidebar = document.querySelector('.sidebar-right');
+  const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+  const closeSidebarBtn = document.querySelector('.close-sidebar');
+
+  if (!sidebar) return;
+
+  // Mở/thu sidebar
+  toggleSidebarBtn?.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+  });
+
+  // Đóng sidebar
+  closeSidebarBtn?.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+  });
+}
+
+// Gọi hàm khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', listenSidebarToggle);
+
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('toggleSidebarBtn');
+  if (!toggleBtn) return;
+
+  let isDragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  // === PC: Bắt đầu kéo bằng chuột ===
+  toggleBtn.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    const rect = toggleBtn.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    toggleBtn.style.cursor = 'grabbing';
+  });
+
+  // === Mobile: Bắt đầu kéo bằng cảm ứng ===
+  toggleBtn.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    const touch = e.touches[0];
+    const rect = toggleBtn.getBoundingClientRect();
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+  });
+
+  // === PC: Di chuyển chuột ===
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    moveToggleBtn(e.clientX, e.clientY);
+  });
+
+  // === Mobile: Di chuyển cảm ứng ===
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    moveToggleBtn(touch.clientX, touch.clientY);
+  });
+
+  // === Dừng kéo ===
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    toggleBtn.style.cursor = 'grab';
+  });
+
+  document.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+
+  function moveToggleBtn(clientX, clientY) {
+    const newX = clientX - offsetX;
+    const newY = clientY - offsetY;
+
+    // Giới hạn trong màn hình
+    const maxX = window.innerWidth - toggleBtn.offsetWidth;
+    const maxY = window.innerHeight - toggleBtn.offsetHeight;
+
+    toggleBtn.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
+    toggleBtn.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
+    toggleBtn.style.bottom = 'auto'; // hủy các thiết lập bottom ban đầu
+    toggleBtn.style.right = 'auto';
+  }
+});
