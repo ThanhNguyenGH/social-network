@@ -51,7 +51,7 @@ app.use(helmet({
       mediaSrc: ["'self'", "https://res.cloudinary.com",
         "https://social-network-files.s3.us-west-004.backblazeb2.com"
       ],
-      connectSrc: ["'self'", "ws://localhost:3000", "wss://your-domain.com"]
+      connectSrc: ["'self'", "ws://localhost:3000", "wss://social-network-7ehc.onrender.com"]
     }
   }
 }));
@@ -431,7 +431,6 @@ app.use('/users', require('./routes/userRoutes'));
 app.use(require('./routes/postRoutes'));
 app.use('/comments', require('./routes/commentRoutes'));
 app.use('/chat', require('./routes/chatRoutes'));
-app.use('/notifications', require('./routes/notificationRoutes'));
 
 // Error handling
 app.use(require('./middleware/errorHandler'));
