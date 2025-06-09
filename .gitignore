@@ -3,7 +3,6 @@ node_modules/
 
 # Bỏ qua file .env chứa thông tin nhạy cảm
 .env
-.env.example
 
 # Bỏ qua thư mục upload chứa file user upload (nếu có)
 public/uploads/

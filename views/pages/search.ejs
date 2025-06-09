@@ -34,7 +34,6 @@
       </ul>
     </div>
 
-
     <!-- User Results -->
     <div id="users-tab" class="tab-content">
       <% if (users.length> 0) { %>
@@ -62,63 +61,58 @@
     </div>
 
     <!-- Post Results -->
-<!-- Post Results -->
-<div id="posts-tab" class="tab-content hidden">
-  <% if (posts.length > 0) { %>
-    <div class="space-y-6">
-      <% posts.forEach(post => { %>
-        <div class="bg-white shadow rounded-xl p-4 overflow-hidden">
-          <div class="flex items-center gap-3 mb-3">
-            <% if (post.author) { %>
-              <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" 
-                   alt="Avatar"
-                   class="w-10 h-10 rounded-full object-cover">
-              <span class="font-semibold text-gray-800">
-                <%= post.author.username %>
-              </span>
-            <% } else { %>
-              <img src="/images/default-avatar.png" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
-              <span class="font-bold text-gray-400 italic">Tài khoản đã bị xóa</span>
-            <% } %>
-            <span class="ml-auto text-sm text-gray-500">
-              <%= new Date(post.createdAt).toLocaleString('vi-VN') %>
-            </span>
-          </div>
+    <div id="posts-tab" class="tab-content hidden">
+      <% if (posts.length> 0) { %>
+        <div class="space-y-6">
+          <% posts.forEach(post=> { %>
+            <div class="bg-white shadow rounded-xl p-4 overflow-hidden">
+              <div class="flex items-center gap-3 mb-3">
+                <% if (post.author) { %>
+                  <img src="<%= post.author.avatar || '/images/default-avatar.png' %>" alt="Avatar"
+                    class="w-10 h-10 rounded-full object-cover">
+                  <span class="font-semibold text-gray-800">
+                    <%= post.author.username %>
+                  </span>
+                  <% } else { %>
+                    <img src="/images/default-avatar.png" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                    <span class="font-bold text-gray-400 italic">Tài khoản đã bị xóa</span>
+                    <% } %>
+                      <span class="ml-auto text-sm text-gray-500">
+                        <%= new Date(post.createdAt).toLocaleString('vi-VN') %>
+                      </span>
+              </div>
 
-          <% if (post.content && post.content.trim() !== '') { %>
-            <p class="text-gray-800 mb-2 whitespace-pre-wrap break-words">
-              <%= post.content %>
-            </p>
-          <% } %>
+              <% if (post.content && post.content.trim() !=='' ) { %>
+                <p class="text-gray-800 mb-2 whitespace-pre-wrap break-words">
+                  <%= post.content %>
+                </p>
+                <% } %>
 
-          <% if (post.media && post.media.url) { %>
-            <div class="mt-3 rounded-lg overflow-hidden border border-gray-200 flex justify-center">
-              <% if (post.media.type === 'image') { %>
-                <img src="<%= post.media.url %>" 
-                     class="w-1/2 h-auto object-contain" 
-                     alt="Ảnh bài viết">
-              <% } else if (post.media.type === 'video') { %>
-                <video controls class="w-1/2 max-h-[250px] rounded">
-                  <source src="<%= post.media.url %>" type="video/mp4">
-                  Trình duyệt của bạn không hỗ trợ video.
-                </video>
-              <% } else if (post.media.type === 'audio') { %>
-                <audio controls class="w-1/2">
-                  <source src="<%= post.media.url %>" type="audio/mpeg">
-                  Trình duyệt của bạn không hỗ trợ âm thanh.
-                </audio>
-              <% } %>
+                  <% if (post.media && post.media.url) { %>
+                    <div class="mt-3 rounded-lg overflow-hidden border border-gray-200">
+                      <% if (post.media.type==='image' ) { %>
+                        <img src="<%= post.media.url %>" class="w-full h-auto max-h-[500px] object-contain mx-auto"
+                          alt="Ảnh bài viết">
+                        <% } else if (post.media.type==='video' ) { %>
+                          <video controls class="w-full max-h-[500px]">
+                            <source src="<%= post.media.url %>" type="video/mp4">
+                            Trình duyệt của bạn không hỗ trợ video.
+                          </video>
+                          <% } else if (post.media.type==='audio' ) { %>
+                            <audio controls class="w-full">
+                              <source src="<%= post.media.url %>" type="audio/mpeg">
+                              Trình duyệt của bạn không hỗ trợ âm thanh.
+                            </audio>
+                            <% } %>
+                    </div>
+                    <% } %>
             </div>
-          <% } %>
+            <% }) %>
         </div>
-      <% }) %>
+        <% } else if (query) { %>
+          <p class="text-gray-500 italic">Không tìm thấy bài đăng nào cho "<%= query %>".</p>
+          <% } %>
     </div>
-  <% } else if (query) { %>
-    <p class="text-gray-500 italic">Không tìm thấy bài đăng nào cho "<%= query %>".</p>
-  <% } %>
-</div>
-
-
   </div>
 
   <script src="/js/search-tabs.js"></script>
