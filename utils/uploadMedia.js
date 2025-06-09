@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 
 const storage = multer.diskStorage({
-  destination: './uploads/',
+  destination: './Uploads/',
   filename: (req, file, cb) => {
     cb(null, `post_${Date.now()}_${file.originalname}`);
   }
@@ -17,10 +17,39 @@ const uploadMedia = multer({
     parts: 20
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|mp4|mov|mp3|wav/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
+    // Định nghĩa các loại file hợp lệ
+    const fileTypes = {
+      image: {
+        ext: ['.jpg', '.jpeg', '.png'],
+        mime: ['image/jpeg', 'image/png']
+      },
+      video: {
+        ext: ['.mp4', '.mov'],
+        mime: ['video/mp4', 'video/quicktime']
+      },
+      audio: {
+        ext: ['.mp3', '.wav'],
+        mime: ['audio/mpeg', 'audio/mp3', 'audio/wav']
+      }
+    };
+
+    // Lấy phần mở rộng và mimetype
+    const extname = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+
+    // Kiểm tra xem file có thuộc loại hợp lệ nào không
+    let isValid = false;
+    for (const type in fileTypes) {
+      if (
+        fileTypes[type].ext.includes(extname) &&
+        fileTypes[type].mime.includes(mimetype)
+      ) {
+        isValid = true;
+        break;
+      }
+    }
+
+    if (isValid) {
       return cb(null, true);
     }
     cb(new Error('Only images (JPEG, PNG), videos (MP4, MOV), and audio (MP3, WAV) are allowed'));
