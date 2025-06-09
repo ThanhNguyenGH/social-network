@@ -16,7 +16,7 @@ router.get('/edit', csrfProtection, (req, res, next) => {
 }, userController.getEditProfile);
 router.post('/edit', upload, csrfProtection, userController.updateProfile);
 router.get('/search', userController.searchUsers);
-router.get('/friends', userController.getFriends);
+router.get('/friends/:userId', userController.getFriends);
 router.post('/friend/:id', csrfProtection, userController.toggleFriend);
 
 router.get('/settings', csrfProtection, (req, res, next) => {

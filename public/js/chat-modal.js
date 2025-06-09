@@ -250,7 +250,17 @@ document.addEventListener('openChatModal', async (event) => {
   }
 
   currentChatUserId = userId;
-  document.getElementById('chatWithUsername').textContent = `Đang trò chuyện với ${username}`;
+const chatWithUsername = document.getElementById('chatWithUsername');
+  if (chatWithUsername) {
+    chatWithUsername.innerHTML = `
+      <div class="flex items-center gap-2">
+        <img src="${avatar || '/images/default-avatar.png'}" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-gray-200">
+        <span class="font-medium text-gray-800">${username}</span>
+      </div>
+    `;
+  } else {
+    console.error('chatWithUsername element not found');
+  }
   const chatModal = document.getElementById('chatModal');
   if (chatModal) {
     chatModal.classList.remove('hidden');

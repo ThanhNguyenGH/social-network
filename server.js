@@ -22,7 +22,6 @@ const { createClient } = require('redis');
 require('dotenv').config();
 require('./config/passport');
 
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -197,7 +196,7 @@ app.use(rateLimit({
   max: 1000
 }));
 
-//Chat
+// Chat
 app.use(async (req, res, next) => {
   try {
     res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
@@ -217,11 +216,9 @@ app.use(async (req, res, next) => {
         if (err) {
           console.error('[Session] Destroy error:', err);
         }
-        // Nếu là request HTML: chuyển hướng về login
         if (req.accepts('html')) {
           return res.redirect('/auth/login');
         }
-        // Nếu là API hoặc không phải HTML: trả lỗi
         return res.status(401).json({ message: 'Your account has been deleted. Please login again.' });
       });
       return;
@@ -260,7 +257,6 @@ app.use(async (req, res, next) => {
     } catch (err) {
       console.error('Error fetching friends or unread messages:', err.message);
     }
-
   } else {
     res.locals.user = null;
     res.locals.currentUser = null;
@@ -269,8 +265,6 @@ app.use(async (req, res, next) => {
 
   next();
 });
-
-
 
 // Redis adapter setup
 const pubClient = createClient({ url: process.env.REDIS_URL });
@@ -281,8 +275,56 @@ Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
   chatController.handleSocketConnection(io);
 });
 
+// Quản lý trạng thái online với Redis
 io.on('connection', (socket) => {
-  // logic bình luận
+  const session = socket.request.session;
+  const userId = session?.user?._id;
+
+  // Khi người dùng kết nối
+  socket.on('user:connect', async ({ userId }) => {
+    if (mongoose.isValidObjectId(userId)) {
+      try {
+        // Lưu trạng thái online vào Redis (tập hợp online:users)
+        await redisClient.sAdd('online:users', userId);
+        await redisClient.set(`online:${userId}`, socket.id, { EX: 60 }); // Lưu socketId, hết hạn sau 60s
+        console.log(`User ${userId} is online`);
+
+        // Gửi trạng thái online đến tất cả client
+        io.emit('user:status', {
+          userId,
+          isOnline: true
+        });
+
+        // Join room theo userId
+        socket.join(userId);
+        console.log(`[Socket.IO] User ${userId} joined their own room`);
+      } catch (err) {
+        console.error('[Redis] Error setting online status:', err);
+      }
+    }
+  });
+
+  // Khi người dùng ngắt kết nối
+  socket.on('disconnect', async () => {
+    if (userId && mongoose.isValidObjectId(userId)) {
+      try {
+        // Xóa trạng thái online khỏi Redis
+        await redisClient.sRem('online:users', userId);
+        await redisClient.del(`online:${userId}`);
+        console.log(`User ${userId} is offline`);
+
+        // Gửi trạng thái offline đến tất cả client
+        io.emit('user:status', {
+          userId,
+          isOnline: false
+        });
+      } catch (err) {
+        console.error('[Redis] Error removing online status:', err);
+      }
+    }
+  });
+
+  // Logic bình luận
   socket.on('subscribe', (postId) => {
     if (mongoose.isValidObjectId(postId)) {
       socket.join(postId);
@@ -296,19 +338,21 @@ io.on('connection', (socket) => {
     socket.leave(postId);
     console.log(`Socket ${socket.id} unsubscribed from post ${postId}`);
   });
+
   socket.on('user_typing', ({ userId, targetId, isTyping }) => {
     io.to(targetId).emit('user_typing', { userId, isTyping });
   });
+
   socket.on('mark_read', ({ senderId, receiverId, messageIds }) => {
     io.to(senderId).emit('messages_read', {
       readerId: receiverId,
       messageIds
     });
   });
+
   // Đọc tin nhắn - cập nhật trạng thái đã đọc
   socket.on('chat:read', async ({ senderId, receiverId }) => {
     try {
-      // Tìm các tin nhắn chưa đọc
       const unreadMessages = await Message.find({
         sender: senderId,
         receiver: receiverId,
@@ -317,9 +361,8 @@ io.on('connection', (socket) => {
 
       const messageIds = unreadMessages.map(msg => msg._id.toString());
 
-      if (messageIds.length === 0) return; // Không cần gửi gì nếu không có tin chưa đọc
+      if (messageIds.length === 0) return;
 
-      // Cập nhật trạng thái đã đọc
       const result = await Message.updateMany(
         { _id: { $in: messageIds } },
         { $set: { isRead: true } }
@@ -327,29 +370,30 @@ io.on('connection', (socket) => {
 
       console.log(`[Socket] ${receiverId} đã đọc ${result.modifiedCount} tin nhắn của ${senderId}`);
 
-      // Gửi về client của người gửi (senderId) biết rằng những tin này đã được đọc
       io.to(senderId).emit('messages_read', {
         readBy: receiverId,
         senderId,
         messageIds
       });
-
     } catch (err) {
       console.error('[Socket] chat:read error:', err);
     }
   });
-
-  // Join room theo userId (để gửi tin nhắn trực tiếp)
-  const session = socket.request.session;
-  const userId = session?.user?._id;
-
-  if (userId) {
-    socket.join(userId); // Join theo ID người dùng
-    console.log(`[Socket.IO] User ${userId} joined their own room`);
-  }
 });
 
-
+// API lấy danh sách user online
+app.get('/users/online', async (req, res) => {
+  try {
+    if (!req.session.user || !req.session.user._id) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const onlineUserIds = await redisClient.sMembers('online:users');
+    res.json({ success: true, onlineUsers: onlineUserIds });
+  } catch (err) {
+    console.error('[Redis] Error fetching online users:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 function broadcastComment(postId, comment) {
   io.to(postId).emit('newComment', { postId, comment });
@@ -362,11 +406,9 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // Routes
 app.get('/', (req, res) => {
   if (req.session.user || req.isAuthenticated()) {
-    // Kiểm tra vai trò admin
     if (req.session.user && req.session.user.role === 'admin') {
       res.redirect('/admin/dashboard');
     } else {

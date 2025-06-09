@@ -1,26 +1,28 @@
 <!-- sidebar-right.ejs -->
-<aside class="sidebar-right w-64 bg-gray-50 p-4" data-current-user-id="<%= currentUser ? currentUser._id : null %>">
-  <div>
-    <h3 class="font-bold mb-2">Danh sách bạn bè</h3>
-    <ul class="space-y-2" id="friend-list">
+<aside class="sidebar-right w-64 space-y-6 px-4 py-6 text-gray-800" data-current-user-id="<%= currentUser ? currentUser._id : null %>">
+  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+    <h3 class="font-bold text-lg mb-4">Danh sách bạn bè</h3>
+    <ul class="space-y-3" id="friend-list">
       <% if (friends && friends.length > 0) { %>
         <% friends.forEach(friend => { %>
           <% const avatar = friend.avatar || '/images/default-avatar.png'; %>
-          <li class="friend-item flex items-center cursor-pointer hover:bg-white p-2 rounded"
+          <li class="friend-item flex items-center cursor-pointer hover:bg-blue-50 p-2 rounded-md transition relative"
               data-id="<%= friend._id %>"
               data-username="<%= friend.username %>"
               data-avatar="<%= avatar %>">
-            <img src="<%= avatar %>" alt="Avatar" class="w-8 h-8 rounded-full mr-2">
-            <span class="flex-1"><%= friend.username %></span>
+            <img src="<%= avatar %>" alt="Avatar" class="w-10 h-10 rounded-full mr-3 object-cover border border-gray-200">
+            <span class="flex-1 text-gray-700 font-medium"><%= friend.username %></span>
             <% if (unreadMap && unreadMap[friend._id.toString()]) { %>
               <span class="unread-badge bg-red-500 text-white text-xs rounded-full px-2 py-1 animate-pulse">
                 <%= unreadMap[friend._id.toString()] %>
               </span>
             <% } %>
+            <!-- Dấu chấm trạng thái (sẽ được cập nhật bởi JavaScript) -->
+            <span class="status-dot"></span>
           </li>
         <% }) %>
       <% } else { %>
-        <li class="text-gray-500">Không có bạn bè nào để hiển thị.</li>
+        <li class="text-gray-500 italic">Không có bạn bè nào để hiển thị.</li>
       <% } %>
     </ul>
   </div>

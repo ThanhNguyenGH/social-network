@@ -377,7 +377,7 @@ exports.searchUsers = async (req, res, next) => {
 };
 
 
-// Xem danh sách bạn bè
+// Xem danh sách bạn bè của một người dùng cụ thể
 exports.getFriends = async (req, res, next) => {
   try {
     console.log('getFriends - session.user:', req.session.user);
@@ -386,40 +386,45 @@ exports.getFriends = async (req, res, next) => {
       return res.redirect('/auth/login');
     }
 
-    const userId = req.session.user._id;
+    const userId = req.params.userId; // Lấy userId từ URL params
     console.log('getFriends - userId:', userId);
     if (!mongoose.isValidObjectId(userId)) {
       console.log('getFriends - Invalid userId');
       return res.status(400).render('pages/error', {
-        message: `Invalid user ID in session: ${userId}`,
+        message: `ID người dùng không hợp lệ: ${userId}`,
         user: req.session.user,
-        layout: 'layouts/main'
+        layout: 'layouts/main',
+        title: 'Lỗi'
       });
     }
 
-    const user = await User.findById(userId).populate('friends', 'username avatar');
-    console.log('getFriends - user:', user);
-    if (!user) {
+    const profileUser = await User.findById(userId).populate('friends', 'username avatar').lean();
+    console.log('getFriends - profileUser:', profileUser);
+    if (!profileUser) {
       console.log('getFriends - User not found');
       return res.status(404).render('pages/error', {
-        message: `User not found for ID: ${userId}`,
+        message: `Không tìm thấy người dùng với ID: ${userId}`,
         user: req.session.user,
-        layout: 'layouts/main'
+        layout: 'layouts/main',
+        title: 'Lỗi'
       });
     }
 
     res.render('pages/friends', {
-      friends: user.friends,
+      profileUser, // Truyền profileUser để hiển thị thông tin người dùng
+      friends: profileUser.friends,
       currentUser: req.session.user,
-      title: 'Friends',
+      csrfToken: req.csrfToken(), // Thêm CSRF token
+      title: `Bạn bè của ${profileUser.username}`,
       layout: 'layouts/main'
     });
   } catch (err) {
     console.error('getFriends - Error:', err);
     res.status(500).render('pages/error', {
-      message: err.message || 'An unexpected error occurred.',
+      message: err.message || 'Đã xảy ra lỗi khi tải danh sách bạn bè.',
       user: req.session.user,
-      layout: 'layouts/main'
+      layout: 'layouts/main',
+      title: 'Lỗi'
     });
   }
 };
